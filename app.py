@@ -95,7 +95,8 @@ def run_app():
         'Travel_Time_From_Chingola_Hours'
     ]
     
-    selected_rows = st.dataframe(
+    # Display the dataframe without assigning to a variable
+    st.dataframe(
         df_filtered[table_columns].style.format({
             'Distance_From_Chingola_km': '{:.0f} km',
             'Travel_Time_From_Chingola_Hours': '{:.1f} hrs'
@@ -107,10 +108,13 @@ def run_app():
     )
 
     # --- Conditional Detail Panels ---
-    if selected_rows and selected_rows['selection']['rows']:
-        # Get the index of the selected row
-        selected_index = selected_rows['selection']['rows'][0]
-        selected_site = df_filtered.loc[selected_index]
+    # Access selection from session_state using the key
+    if "site_table" in st.session_state and st.session_state.site_table.get('selection', {}).get('rows'):
+        # Get the index of the selected row from the filtered dataframe
+        selected_index = st.session_state.site_table['selection']['rows'][0]
+        
+        # Get the actual row from the filtered dataframe using iloc
+        selected_site = df_filtered.iloc[selected_index]
         
         col_map, col_logistics = st.columns([1, 1])
 
