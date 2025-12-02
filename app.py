@@ -1,13 +1,13 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import os
 import plotly.express as px
+import os
 
-# --- Configuration Constants ---
-# NOTE: Update the ROOT_FOLDER if you are running this locally from a different directory
-ROOT_FOLDER = r"C:\Users\willi\OneDrive\Documents\COVEX\PYTHON"
-DATA_FILENAME = os.path.join(ROOT_FOLDER, "zambia_mining_app_data.csv")
+# --- Configuration Constants (CLEANED FOR CLOUD DEPLOYMENT) ---
+# The app will look for this file in the same directory as app.py on GitHub.
+DATA_FILENAME = "zambia_mining_app_data.csv" 
+
 CHINGOLA_COORDS = (-12.5333, 27.8500)
 CHINGOLA_NAME = "Chingola (Base of Operations)"
 
@@ -23,13 +23,20 @@ st.set_page_config(
 def load_data(file_path):
     """Loads the processed data and performs final type casting."""
     try:
+        # Load the CSV file from the application's root directory
         df = pd.read_csv(file_path)
-        # Ensure coordinates are floats for mapping
+        
+        # Ensure coordinates are numeric floats for mapping (crucial!)
         df['Latitude'] = pd.to_numeric(df['Latitude'], errors='coerce')
         df['Longitude'] = pd.to_numeric(df['Longitude'], errors='coerce')
+        
+        # Drop any rows that failed conversion
         return df.dropna(subset=['Latitude', 'Longitude'])
+    
     except FileNotFoundError:
-        st.error(f"Error: Data file not found. Ensure 'zambia_mining_app_data.csv' is in the root folder: {ROOT_FOLDER}")
+        # Display a clear error message that instructs the user on fixing deployment
+        st.error("Error: Data file 'zambia_mining_app_data.csv' not found in the GitHub repository root.")
+        st.info("Please ensure the CSV file is committed and pushed to the same folder as app.py.")
         return pd.DataFrame()
 
 # --- MAIN APPLICATION LOGIC ---
@@ -53,14 +60,14 @@ def run_app():
     # --- Sidebar Filters ---
     st.sidebar.header("🗺️ Filter Properties")
 
-    # Filter 1: District/Town (e.g., Kabwe)
+    # Filter 1: District/Town (Locale)
     selected_locales = st.sidebar.multiselect(
         "Filter by District/Town (Locale):",
         options=df['District/Town'].unique(),
         default=[]
     )
 
-    # Filter 2: Primary Commodity (e.g., Copper)
+    # Filter 2: Primary Commodity 
     selected_commodities = st.sidebar.multiselect(
         "Filter by Primary Commodity:",
         options=df['Primary_Commodity'].unique(),
@@ -79,15 +86,17 @@ def run_app():
     st.caption("Select a row below to populate the map and detail panels.")
 
     # Display table with selection enabled
+    table_columns = [
+        'Property_Name', 
+        'District/Town', 
+        'Primary_Commodity', 
+        'Status', 
+        'Distance_From_Chingola_km',
+        'Travel_Time_From_Chingola_Hours'
+    ]
+    
     selected_rows = st.dataframe(
-        df_filtered[[
-            'Property_Name', 
-            'District/Town', 
-            'Primary_Commodity', 
-            'Status', 
-            'Distance_From_Chingola_km',
-            'Travel_Time_From_Chingola_Hours'
-        ]].style.format({
+        df_filtered[table_columns].style.format({
             'Distance_From_Chingola_km': '{:.0f} km',
             'Travel_Time_From_Chingola_Hours': '{:.1f} hrs'
         }),
@@ -116,7 +125,7 @@ def run_app():
                 'color': ['#00FF00', '#FF0000'] # Green for base, Red for site
             })
 
-            # Plotting the map using Plotly for better aesthetics and control
+            # Plotting the map using Plotly for better aesthetics and control 
             fig = px.scatter_mapbox(
                 map_data,
                 lat="lat",
@@ -129,7 +138,7 @@ def run_app():
                 },
                 zoom=5,
                 height=400,
-                mapbox_style="carto-positron" # Good neutral map style
+                mapbox_style="carto-positron" # Neutral map style
             )
             
             # Center the map between the two points for better visualization
