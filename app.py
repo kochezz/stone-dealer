@@ -3,47 +3,33 @@ import pandas as pd
 import numpy as np
 import os
 import plotly.express as px
-import streamlit_authenticator as stauth
-import yaml
-from yaml.loader import SafeLoader
 
-# --- CONFIGURATION CONSTANTS ---
+# --- Configuration Constants ---
+# NOTE: Update the ROOT_FOLDER if you are running this locally from a different directory
 ROOT_FOLDER = r"C:\Users\willi\OneDrive\Documents\COVEX\PYTHON"
 DATA_FILENAME = os.path.join(ROOT_FOLDER, "zambia_mining_app_data.csv")
 CHINGOLA_COORDS = (-12.5333, 27.8500)
 CHINGOLA_NAME = "Chingola (Base of Operations)"
 
-# --- AUTHENTICATION CONFIG ---
-# 1. DEFINE YOUR CREDENTIALS HERE
-# NOTE: The password 'adminpass' is used below.
-# You MUST replace the hash with a hash generated for your chosen password.
-# To generate a new hash, run this command in your terminal:
-# python -c "import streamlit_authenticator as stauth; print(stauth.Hasher(['YOUR_SECURE_PASSWORD']).generate())"
-# Then copy the output string (the list of hashes) into the HASHED_PASSWORDS list below.
-HASHED_PASSWORDS = ['HASHED_PASSWORD_FOR_YOUR_ADMIN_USER'] # Placeholder - REPLACE THIS!
-USERNAMES = ['willi']
-NAMES = ['Mining Engineer']
-
-# 2. Setup the Authenticator
-authenticator = stauth.Authenticate(
-    names=NAMES,
-    usernames=USERNAMES,
-    passwords=HASHED_PASSWORDS,
-    cookie_name='mine_planner_cookie',
-    key='random_signature_key',
-    cookie_expiry_days=30
+# --- Layout and Setup ---
+st.set_page_config(
+    page_title="Zambia Mining Site Assessment Planner",
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
 # --- Function to Load Data (with Caching) ---
 @st.cache_data
 def load_data(file_path):
+    """Loads the processed data and performs final type casting."""
     try:
         df = pd.read_csv(file_path)
+        # Ensure coordinates are floats for mapping
         df['Latitude'] = pd.to_numeric(df['Latitude'], errors='coerce')
         df['Longitude'] = pd.to_numeric(df['Longitude'], errors='coerce')
         return df.dropna(subset=['Latitude', 'Longitude'])
     except FileNotFoundError:
-        st.error("Error: Data file not found. Ensure 'zambia_mining_app_data.csv' is in the root folder.")
+        st.error(f"Error: Data file not found. Ensure 'zambia_mining_app_data.csv' is in the root folder: {ROOT_FOLDER}")
         return pd.DataFrame()
 
 # --- MAIN APPLICATION LOGIC ---
@@ -54,7 +40,7 @@ def run_app():
     df = load_data(DATA_FILENAME)
 
     if df.empty:
-        return
+        st.stop()
 
     # --- Title and Header ---
     st.title("🇿🇲 Mining Site Assessment Planner")
@@ -67,12 +53,14 @@ def run_app():
     # --- Sidebar Filters ---
     st.sidebar.header("🗺️ Filter Properties")
 
+    # Filter 1: District/Town (e.g., Kabwe)
     selected_locales = st.sidebar.multiselect(
         "Filter by District/Town (Locale):",
         options=df['District/Town'].unique(),
         default=[]
     )
 
+    # Filter 2: Primary Commodity (e.g., Copper)
     selected_commodities = st.sidebar.multiselect(
         "Filter by Primary Commodity:",
         options=df['Primary_Commodity'].unique(),
@@ -90,6 +78,7 @@ def run_app():
     st.subheader(f"Filtered Properties ({len(df_filtered)} Sites)")
     st.caption("Select a row below to populate the map and detail panels.")
 
+    # Display table with selection enabled
     selected_rows = st.dataframe(
         df_filtered[[
             'Property_Name', 
@@ -110,6 +99,7 @@ def run_app():
 
     # --- Conditional Detail Panels ---
     if selected_rows and selected_rows['selection']['rows']:
+        # Get the index of the selected row
         selected_index = selected_rows['selection']['rows'][0]
         selected_site = df_filtered.loc[selected_index]
         
@@ -118,13 +108,15 @@ def run_app():
         with col_map:
             st.subheader(f"Map View: {selected_site['Property_Name']}")
             
+            # Prepare data for map plotting (Chingola + Selected Site)
             map_data = pd.DataFrame({
                 'lat': [CHINGOLA_COORDS[0], selected_site['Latitude']],
                 'lon': [CHINGOLA_COORDS[1], selected_site['Longitude']],
                 'name': [CHINGOLA_NAME, selected_site['Property_Name']],
-                'color': ['#00FF00', '#FF0000']
+                'color': ['#00FF00', '#FF0000'] # Green for base, Red for site
             })
 
+            # Plotting the map using Plotly for better aesthetics and control
             fig = px.scatter_mapbox(
                 map_data,
                 lat="lat",
@@ -137,9 +129,10 @@ def run_app():
                 },
                 zoom=5,
                 height=400,
-                mapbox_style="carto-positron"
+                mapbox_style="carto-positron" # Good neutral map style
             )
             
+            # Center the map between the two points for better visualization
             center_lat = (CHINGOLA_COORDS[0] + selected_site['Latitude']) / 2
             center_lon = (CHINGOLA_COORDS[1] + selected_site['Longitude']) / 2
             fig.update_layout(
@@ -187,14 +180,5 @@ def run_app():
     else:
         st.info("Select a site from the table above to visualize its location and planning details.")
 
-# --- Authentication Logic ---
-name, authentication_status, username = authenticator.login('Login', 'main')
-
-if authentication_status:
-    authenticator.logout('Logout', 'sidebar')
-    st.sidebar.markdown(f'Welcome, **{name}**')
-    run_app()
-elif authentication_status is False:
-    st.error('Username/password is incorrect')
-elif authentication_status is None:
-    st.warning('Please enter your username and password')
+# --- Run the application ---
+run_app()
