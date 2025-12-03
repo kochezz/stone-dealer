@@ -525,7 +525,6 @@ def run_app():
                     'Travel Time': '{:.1f} hrs',
                     'Lat': '{:.4f}',
                     'Lon': '{:.4f}'
-                    'Travel_Time_From_Chingola_Hours': '{:.1f} hrs'
                 }),
                 use_container_width=True,
                 hide_index=True,
