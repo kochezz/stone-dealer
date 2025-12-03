@@ -15,7 +15,7 @@ CHINGOLA_NAME = "Chingola Base"
 # Set your password here OR use environment variable for better security
 # To use environment variable: In Streamlit Cloud, go to Settings > Secrets
 # and add: password = "your_secure_password"
-APP_PASSWORD = os.environ.get("APP_PASSWORD", "Claire&Goska") 
+APP_PASSWORD = os.environ.get("APP_PASSWORD", "Claire&Goska")  # Change this default password!
 
 # --- Authentication Functions ---
 def check_password():
@@ -500,14 +500,31 @@ def run_app():
                 'Province',
                 'Clean_District',
                 'Primary_Commodity',
+                'Commodity_2',
+                'Commodity_3',
+                'Latitude',
+                'Longitude',
                 'Status',
                 'Distance_From_Chingola_km',
                 'Travel_Time_From_Chingola_Hours'
             ]
             
             st.dataframe(
-                df_filtered[display_columns].style.format({
-                    'Distance_From_Chingola_km': '{:.0f} km',
+                df_filtered[display_columns].rename(columns={
+                    'Property_Name': 'Property',
+                    'Clean_District': 'District',
+                    'Primary_Commodity': 'Primary',
+                    'Commodity_2': 'Secondary',
+                    'Commodity_3': 'Tertiary',
+                    'Latitude': 'Lat',
+                    'Longitude': 'Lon',
+                    'Distance_From_Chingola_km': 'Distance',
+                    'Travel_Time_From_Chingola_Hours': 'Travel Time'
+                }).style.format({
+                    'Distance': '{:.0f} km',
+                    'Travel Time': '{:.1f} hrs',
+                    'Lat': '{:.4f}',
+                    'Lon': '{:.4f}'
                     'Travel_Time_From_Chingola_Hours': '{:.1f} hrs'
                 }),
                 use_container_width=True,
