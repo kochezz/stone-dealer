@@ -20,22 +20,16 @@ st.set_page_config(
 # --- Custom CSS for better styling ---
 st.markdown("""
     <style>
-    .metric-card {
-        background-color: #f0f2f6;
-        padding: 20px;
-        border-radius: 10px;
-        border-left: 5px solid #1f77b4;
+    /* Remove any conflicting styles that might hide metrics */
+    div[data-testid="stMetricValue"] {
+        font-size: 1.5rem;
+        color: inherit !important;
     }
-    .filter-section {
-        background-color: #ffffff;
-        padding: 15px;
-        border-radius: 8px;
-        margin-bottom: 15px;
+    div[data-testid="stMetricLabel"] {
+        color: inherit !important;
     }
-    .stMetric {
-        background-color: #f8f9fa;
-        padding: 10px;
-        border-radius: 5px;
+    div[data-testid="stMetricDelta"] {
+        color: inherit !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -172,10 +166,10 @@ def run_app():
         st.markdown("**Base:** Chingola, Copperbelt Province")
     
     with col2:
-        st.metric("Total Properties", len(df))
+        st.metric("Total Properties", f"{len(df)}")
     
     with col3:
-        st.metric("Provinces", df['Province'].nunique())
+        st.metric("Provinces", f"{df['Province'].nunique()}")
     
     st.markdown("---")
     
@@ -268,10 +262,11 @@ def run_app():
     col1, col2, col3, col4, col5 = st.columns(5)
     
     with col1:
+        delta_value = len(df_filtered) - len(df) if len(df_filtered) != len(df) else None
         st.metric(
-            "Filtered Sites",
-            len(df_filtered),
-            delta=f"{len(df_filtered) - len(df)} from total" if len(df_filtered) < len(df) else None
+            label="Filtered Sites",
+            value=f"{len(df_filtered)}",
+            delta=f"{delta_value} from total" if delta_value else None
         )
     
     with col2:
@@ -289,10 +284,12 @@ def run_app():
             st.metric("Avg Travel Time", "N/A")
     
     with col4:
-        st.metric("Commodities", df_filtered['Primary_Commodity'].nunique())
+        unique_commodities = df_filtered['Primary_Commodity'].nunique() if not df_filtered.empty else 0
+        st.metric("Commodities", unique_commodities)
     
     with col5:
-        st.metric("Provinces", df_filtered['Province'].nunique())
+        unique_provinces = df_filtered['Province'].nunique() if not df_filtered.empty else 0
+        st.metric("Provinces", unique_provinces)
     
     st.markdown("---")
     
@@ -526,7 +523,7 @@ def run_app():
     st.markdown("""
         <div style='text-align: center; color: #666; padding: 20px;'>
             <p>Zambia Mining Site Assessment Planner | Base: Chingola, Copperbelt Province</p>
-            <p style='font-size: 0.9em;'>Data includes 239 mining properties across 10 provinces</p>
+            <p style='font-size: 0.9em;'>Data includes 239 mining properties • 27 commodities • 10 provinces</p>
         </div>
     """, unsafe_allow_html=True)
 
