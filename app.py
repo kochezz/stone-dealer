@@ -205,7 +205,7 @@ def run_app():
         st.markdown("### ⚒️ Commodity")
         selected_commodities = st.multiselect(
             "Primary Commodity",
-            options=sorted(df['Primary_Commodity'].unique()),
+            options=sorted(df['Primary_Commodity'].dropna().unique()),
             default=[],
             help="Filter by primary mineral commodity"
         )
