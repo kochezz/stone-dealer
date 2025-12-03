@@ -3,11 +3,80 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
+import hashlib
+import os
 
 # --- Configuration Constants ---
 DATA_FILENAME = "zambia_mining_app_data_final.csv"  # Updated to use cleaned dataset
 CHINGOLA_COORDS = (-12.5333, 27.8500)
 CHINGOLA_NAME = "Chingola Base"
+
+# --- Password Configuration ---
+# Set your password here OR use environment variable for better security
+# To use environment variable: In Streamlit Cloud, go to Settings > Secrets
+# and add: password = "your_secure_password"
+APP_PASSWORD = os.environ.get("APP_PASSWORD", "Claire&Goska") 
+
+# --- Authentication Functions ---
+def check_password():
+    """Returns `True` if the user has entered the correct password."""
+    
+    def password_entered():
+        """Checks whether a password entered by the user is correct."""
+        if hashlib.sha256(st.session_state["password"].encode()).hexdigest() == hashlib.sha256(APP_PASSWORD.encode()).hexdigest():
+            st.session_state["password_correct"] = True
+            del st.session_state["password"]  # Don't store password in session
+        else:
+            st.session_state["password_correct"] = False
+
+    # First run, show login screen
+    if "password_correct" not in st.session_state:
+        st.markdown("""
+            <div style='text-align: center; padding: 50px;'>
+                <h1>⛏️ Zambia Mining Site Planner</h1>
+                <p style='color: #666; font-size: 1.2em;'>Vilagio Trading Limited</p>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            st.markdown("### 🔒 Authentication Required")
+            st.text_input(
+                "Enter Password", 
+                type="password", 
+                on_change=password_entered, 
+                key="password",
+                placeholder="Enter your password"
+            )
+            st.info("💡 Contact administrator for access credentials")
+        return False
+    
+    # Password incorrect, show error and login again
+    elif not st.session_state["password_correct"]:
+        st.markdown("""
+            <div style='text-align: center; padding: 50px;'>
+                <h1>⛏️ Zambia Mining Site Planner</h1>
+                <p style='color: #666; font-size: 1.2em;'>Vilagio Trading Limited</p>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            st.markdown("### 🔒 Authentication Required")
+            st.text_input(
+                "Enter Password", 
+                type="password", 
+                on_change=password_entered, 
+                key="password",
+                placeholder="Enter your password"
+            )
+            st.error("❌ Incorrect password. Please try again.")
+            st.info("💡 Contact administrator for access credentials")
+        return False
+    
+    # Password correct
+    else:
+        return True
 
 # --- Page Configuration ---
 st.set_page_config(
@@ -16,6 +85,10 @@ st.set_page_config(
     initial_sidebar_state="expanded",
     page_icon="⛏️"
 )
+
+# --- Check Authentication ---
+if not check_password():
+    st.stop()  # Stop execution if not authenticated
 
 # --- Custom CSS for better styling ---
 st.markdown("""
@@ -176,6 +249,13 @@ def run_app():
     # --- Sidebar Filters ---
     with st.sidebar:
         st.header("🔍 Filter Properties")
+        
+        # Logout button
+        if st.button("🚪 Logout", use_container_width=True, type="secondary"):
+            st.session_state["password_correct"] = False
+            st.rerun()
+        
+        st.markdown("---")
         
         # Filter 1: Province
         st.markdown("### 📍 Location")
