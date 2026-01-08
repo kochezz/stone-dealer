@@ -274,7 +274,7 @@ def run_app():
         
         selected_districts = st.multiselect(
             "District",
-            options=sorted([d for d in available_districts if pd.notna(d)]),
+            options=sorted(available_districts),
             default=[],
             help="Filter by district within selected province(s)"
         )
