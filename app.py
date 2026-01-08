@@ -4,7 +4,34 @@ import numpy as np
 import plotly.express as px
 import os
 import streamlit_authenticator as stauth
+import copy # <--- Make sure this is imported at the top
 
+# --- AUTHENTICATION CONFIG (Fixed) ---
+try:
+    # 1. Fetch secrets
+    # We use copy.deepcopy() to ensure the authenticator can modify the dict 
+    # (e.g., for hashing) without crashing on the read-only st.secrets.
+    if 'credentials' not in st.secrets:
+        raise KeyError("Missing '[credentials]' section in secrets.toml")
+        
+    if 'cookie' not in st.secrets:
+        raise KeyError("Missing '[cookie]' section in secrets.toml")
+
+    credentials = copy.deepcopy(st.secrets['credentials'])
+    cookie = copy.deepcopy(st.secrets['cookie'])
+    
+    # 2. Setup Authenticator
+    authenticator = stauth.Authenticate(
+        credentials,
+        cookie['name'],
+        cookie['key'],
+        cookie['expiry_days'],
+    )
+except Exception as e:
+    # This will now print the EXACT error to the screen so we can fix it
+    st.error(f"Authentication Error: {e}")
+    st.info("Check your Streamlit Cloud Secrets to ensure they match the TOML format below.")
+    st.stop()
 # --- Configuration Constants ---
 DATA_FILENAME = "zambia_mining_app_data.csv" 
 CHINGOLA_COORDS = (-12.5333, 27.8500)
