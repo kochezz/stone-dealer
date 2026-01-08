@@ -2,243 +2,627 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.express as px
+import plotly.graph_objects as go
+import hashlib
 import os
-import streamlit_authenticator as stauth
-import yaml
-from yaml.loader import SafeLoader
 
 # --- Configuration Constants ---
-DATA_FILENAME = "zambia_mining_app_data.csv" 
+DATA_FILENAME = "zambia_mining_app_data.csv"  # Updated to use cleaned dataset
 CHINGOLA_COORDS = (-12.5333, 27.8500)
-CHINGOLA_NAME = "Chingola (Base of Operations)"
+CHINGOLA_NAME = "Chingola Base"
 
-# --- Layout and Setup ---
+# --- Password Configuration ---
+# Set your password here OR use environment variable for better security
+# To use environment variable: In Streamlit Cloud, go to Settings > Secrets
+# and add: password = "your_secure_password"
+APP_PASSWORD = os.environ.get("APP_PASSWORD", "Claire&Goska")  # Change this default password!
+
+# --- Authentication Functions ---
+def check_password():
+    """Returns `True` if the user has entered the correct password."""
+    
+    def password_entered():
+        """Checks whether a password entered by the user is correct."""
+        if hashlib.sha256(st.session_state["password"].encode()).hexdigest() == hashlib.sha256(APP_PASSWORD.encode()).hexdigest():
+            st.session_state["password_correct"] = True
+            del st.session_state["password"]  # Don't store password in session
+        else:
+            st.session_state["password_correct"] = False
+
+    # First run, show login screen
+    if "password_correct" not in st.session_state:
+        st.markdown("""
+            <div style='text-align: center; padding: 50px;'>
+                <h1>⛏️ Zambia Mining Site Planner</h1>
+                <p style='color: #666; font-size: 1.2em;'>Vilagio Trading Limited</p>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            st.markdown("### 🔒 Authentication Required")
+            st.text_input(
+                "Enter Password", 
+                type="password", 
+                on_change=password_entered, 
+                key="password",
+                placeholder="Enter your password"
+            )
+            st.info("💡 Contact administrator for access credentials")
+        return False
+    
+    # Password incorrect, show error and login again
+    elif not st.session_state["password_correct"]:
+        st.markdown("""
+            <div style='text-align: center; padding: 50px;'>
+                <h1>⛏️ Zambia Mining Site Planner</h1>
+                <p style='color: #666; font-size: 1.2em;'>Vilagio Trading Limited</p>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            st.markdown("### 🔒 Authentication Required")
+            st.text_input(
+                "Enter Password", 
+                type="password", 
+                on_change=password_entered, 
+                key="password",
+                placeholder="Enter your password"
+            )
+            st.error("❌ Incorrect password. Please try again.")
+            st.info("💡 Contact administrator for access credentials")
+        return False
+    
+    # Password correct
+    else:
+        return True
+
+# --- Page Configuration ---
 st.set_page_config(
-    page_title="Zambia Mining Site Assessment Planner",
+    page_title="Zambia Mining Site Planner",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
+    page_icon="⛏️"
 )
 
-# --- HELPER: Fix Secrets Recursion Error ---
-def convert_secrets_to_dict(secrets_obj):
-    """
-    Recursively converts Streamlit Secrets to a standard Python dictionary.
-    This prevents the 'maximum recursion depth exceeded' error caused by 
-    passing the internal Secrets object directly to external libraries.
-    """
-    if isinstance(secrets_obj, dict) or type(secrets_obj).__name__ == "Secrets":
-        return {k: convert_secrets_to_dict(v) for k, v in secrets_obj.items()}
-    return secrets_obj
+# --- Check Authentication ---
+if not check_password():
+    st.stop()  # Stop execution if not authenticated
 
-# --- AUTHENTICATION CONFIG ---
-try:
-    # 1. Convert st.secrets to a plain dictionary (Critical Fix)
-    secrets_dict = convert_secrets_to_dict(st.secrets)
-    
-    # 2. Validation
-    if 'credentials' not in secrets_dict:
-        raise KeyError("Missing '[credentials]' section in secrets.toml")
-    if 'cookie' not in secrets_dict:
-        raise KeyError("Missing '[cookie]' section in secrets.toml")
+# --- Custom CSS for better styling ---
+st.markdown("""
+    <style>
+    /* Remove any conflicting styles that might hide metrics */
+    div[data-testid="stMetricValue"] {
+        font-size: 1.5rem;
+        color: inherit !important;
+    }
+    div[data-testid="stMetricLabel"] {
+        color: inherit !important;
+    }
+    div[data-testid="stMetricDelta"] {
+        color: inherit !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
-    # 3. Setup Authenticator
-    authenticator = stauth.Authenticate(
-        secrets_dict['credentials'],
-        secrets_dict['cookie']['name'],
-        secrets_dict['cookie']['key'],
-        secrets_dict['cookie']['expiry_days'],
-    )
-except Exception as e:
-    st.error(f"Authentication Setup Error: {e}")
-    st.info("Please check your Streamlit Cloud Secrets configuration.")
-    st.stop()
-
-# --- Function to Load Data ---
+# --- Load Data Function ---
 @st.cache_data
 def load_data(file_path):
-    """Loads the processed data and performs final type casting."""
+    """Loads the cleaned mining data."""
     try:
         df = pd.read_csv(file_path)
-        
-        # Ensure coordinates are numeric
         df['Latitude'] = pd.to_numeric(df['Latitude'], errors='coerce')
         df['Longitude'] = pd.to_numeric(df['Longitude'], errors='coerce')
-        
-        # Fill missing text fields to avoid errors in filters
-        df['Province'] = df['Province'].fillna('Unknown')
-        df['District/Town'] = df['District/Town'].fillna('Unknown')
-        df['Primary_Commodity'] = df['Primary_Commodity'].fillna('Unknown')
-        
         return df.dropna(subset=['Latitude', 'Longitude'])
-    
     except FileNotFoundError:
-        st.error(f"Error: Data file '{DATA_FILENAME}' not found in repository.")
+        st.error(f"❌ Data file '{file_path}' not found. Please ensure it's in the same directory as app.py.")
         return pd.DataFrame()
 
-# --- MAIN DASHBOARD LOGIC ---
-def main_dashboard():
-    df = load_data(DATA_FILENAME)
+# --- Helper Functions ---
+def create_multi_property_map(df_filtered, base_coords, base_name):
+    """Creates a map showing all filtered properties plus the base location."""
+    
+    if df_filtered.empty:
+        # Show only base if no properties match filter
+        fig = px.scatter_mapbox(
+            pd.DataFrame({
+                'lat': [base_coords[0]],
+                'lon': [base_coords[1]],
+                'name': [base_name],
+                'type': ['Base']
+            }),
+            lat='lat',
+            lon='lon',
+            hover_name='name',
+            color='type',
+            color_discrete_map={'Base': 'green'},
+            zoom=5,
+            height=600,
+            mapbox_style="carto-positron"
+        )
+    else:
+        # Combine base and filtered properties
+        base_df = pd.DataFrame({
+            'lat': [base_coords[0]],
+            'lon': [base_coords[1]],
+            'name': [base_name],
+            'type': ['Base'],
+            'commodity': [''],
+            'province': [''],
+            'distance': [0]
+        })
+        
+        properties_df = pd.DataFrame({
+            'lat': df_filtered['Latitude'].values,
+            'lon': df_filtered['Longitude'].values,
+            'name': df_filtered['Property_Name'].values,
+            'type': ['Property'] * len(df_filtered),
+            'commodity': df_filtered['Primary_Commodity'].values,
+            'province': df_filtered['Province'].values,
+            'distance': df_filtered['Distance_From_Chingola_km'].values
+        })
+        
+        map_df = pd.concat([base_df, properties_df], ignore_index=True)
+        
+        # Create custom hover text
+        map_df['hover_text'] = map_df.apply(
+            lambda row: f"<b>{row['name']}</b><br>" + 
+                       (f"Commodity: {row['commodity']}<br>Province: {row['province']}<br>Distance: {row['distance']:.0f} km" 
+                        if row['type'] == 'Property' else "Base of Operations"),
+            axis=1
+        )
+        
+        # Create map with color coding
+        fig = px.scatter_mapbox(
+            map_df,
+            lat='lat',
+            lon='lon',
+            hover_name='hover_text',
+            color='type',
+            color_discrete_map={'Base': '#00C853', 'Property': '#FF5722'},
+            zoom=5.5,
+            height=600,
+            mapbox_style="carto-positron",
+            size=[15 if t == 'Base' else 8 for t in map_df['type']]
+        )
+        
+        fig.update_traces(
+            hovertemplate='%{hovertext}<extra></extra>',
+            marker=dict(opacity=0.8)
+        )
+    
+    fig.update_layout(
+        margin=dict(l=0, r=0, t=0, b=0),
+        showlegend=True,
+        legend=dict(
+            yanchor="top",
+            y=0.99,
+            xanchor="left",
+            x=0.01,
+            bgcolor="rgba(255,255,255,0.8)"
+        )
+    )
+    
+    return fig
 
+def get_commodity_color(commodity):
+    """Returns a color for each commodity type."""
+    color_map = {
+        'Copper': '#FF5722',
+        'Diamond': '#2196F3',
+        'Gold': '#FFD700',
+        'Iron': '#795548',
+        'Zinc': '#9E9E9E',
+        'Mangawese': '#4CAF50',
+        'Beryl': '#00BCD4',
+        'Emerald': '#4CAF50',
+        'Nickel': '#607D8B'
+    }
+    return color_map.get(commodity, '#9C27B0')
+
+# --- Main Application ---
+def run_app():
+    
+    # Load data
+    df = load_data(DATA_FILENAME)
+    
     if df.empty:
         st.stop()
-
-    # --- Title and Header ---
-    c1, c2 = st.columns([3, 1])
-    with c1:
-        st.title("🇿🇲 Mining Site Assessment Planner")
-        st.markdown("### Base of Operations: **Chingola**")
-    with c2:
-        # Logout button in the main area (top right)
-        authenticator.logout('Logout', 'main')
-
-    st.markdown("""
-        Use the sidebar filters to select properties for viability assessment.
-        Select a row in the table below to view travel logistics and details.
-    """)
-
+    
+    # --- Header Section ---
+    col1, col2, col3 = st.columns([2, 1, 1])
+    
+    with col1:
+        st.title("⛏️ Zambia Mining Site Planner")
+        st.markdown("**Base:** Chingola, Copperbelt Province")
+    
+    with col2:
+        st.metric("Total Properties", f"{len(df)}")
+    
+    with col3:
+        st.metric("Provinces", f"{df['Province'].nunique()}")
+    
+    st.markdown("---")
+    
     # --- Sidebar Filters ---
-    st.sidebar.header("🗺️ Filter Properties")
-    st.sidebar.markdown(f"User: **{st.session_state['name']}**") # Show logged in user
-
-    # 1. Province Filter
-    selected_provinces = st.sidebar.multiselect(
-        "Filter by Province:",
-        options=sorted(df['Province'].unique()),
-        default=[]
-    )
-
-    # 2. District Filter (Dynamic)
-    if selected_provinces:
-        available_districts = df[df['Province'].isin(selected_provinces)]['District/Town'].unique()
-    else:
-        available_districts = df['District/Town'].unique()
-
-    selected_locales = st.sidebar.multiselect(
-        "Filter by District/Town:",
-        options=sorted(available_districts),
-        default=[]
-    )
-
-    # 3. Commodity Filter
-    selected_commodities = st.sidebar.multiselect(
-        "Filter by Primary Commodity:",
-        options=sorted(df['Primary_Commodity'].unique()),
-        default=[]
-    )
-
+    with st.sidebar:
+        st.header("🔍 Filter Properties")
+        
+        # Logout button
+        if st.button("🚪 Logout", use_container_width=True, type="secondary"):
+            st.session_state["password_correct"] = False
+            st.rerun()
+        
+        st.markdown("---")
+        
+        # Filter 1: Province
+        st.markdown("### 📍 Location")
+        selected_provinces = st.multiselect(
+            "Province",
+            options=sorted(df['Province'].unique()),
+            default=[],
+            help="Filter by Zambian province"
+        )
+        
+        # Filter 2: District (dependent on province)
+        if selected_provinces:
+            available_districts = df[df['Province'].isin(selected_provinces)]['Clean_District'].unique()
+        else:
+            available_districts = df['Clean_District'].unique()
+        
+        selected_districts = st.multiselect(
+            "District",
+            options=sorted(available_districts),
+            default=[],
+            help="Filter by district within selected province(s)"
+        )
+        
+        st.markdown("---")
+        
+        # Filter 3: Commodity
+        st.markdown("### ⚒️ Commodity")
+        selected_commodities = st.multiselect(
+            "Primary Commodity",
+            options=sorted(df['Primary_Commodity'].dropna().unique()),
+            default=[],
+            help="Filter by primary mineral commodity"
+        )
+        
+        st.markdown("---")
+        
+        # Filter 4: Status
+        st.markdown("### 📊 Status")
+        selected_statuses = st.multiselect(
+            "Property Status",
+            options=sorted(df['Status'].unique()),
+            default=[],
+            help="Filter by property operational status"
+        )
+        
+        st.markdown("---")
+        
+        # Filter 5: Distance Range
+        st.markdown("### 📏 Distance from Base")
+        max_distance = st.slider(
+            "Maximum Distance (km)",
+            min_value=0,
+            max_value=int(df['Distance_From_Chingola_km'].max()),
+            value=int(df['Distance_From_Chingola_km'].max()),
+            step=50,
+            help="Filter properties within this distance from Chingola"
+        )
+        
+        # Clear filters button
+        st.markdown("---")
+        if st.button("🔄 Clear All Filters", use_container_width=True):
+            st.rerun()
+    
     # --- Apply Filters ---
     df_filtered = df.copy()
+    
     if selected_provinces:
         df_filtered = df_filtered[df_filtered['Province'].isin(selected_provinces)]
-    if selected_locales:
-        df_filtered = df_filtered[df_filtered['District/Town'].isin(selected_locales)]
+    
+    if selected_districts:
+        df_filtered = df_filtered[df_filtered['Clean_District'].isin(selected_districts)]
+    
     if selected_commodities:
         df_filtered = df_filtered[df_filtered['Primary_Commodity'].isin(selected_commodities)]
-
-    # --- Display Filtered Table ---
-    st.subheader(f"Filtered Properties ({len(df_filtered)} Sites)")
-    st.caption("Select a row below to populate the map and detail panels.")
-
-    table_columns = [
-        'Property_Name', 
-        'Province', 
-        'District/Town', 
-        'Primary_Commodity', 
-        'Status', 
-        'Distance_From_Chingola_km',
-        'Travel_Time_From_Chingola_Hours'
-    ]
     
-    # Handle missing columns gracefully
-    existing_cols = [c for c in table_columns if c in df_filtered.columns]
-
-    selected_rows = st.dataframe(
-        df_filtered[existing_cols].style.format({
-            'Distance_From_Chingola_km': '{:.0f} km',
-            'Travel_Time_From_Chingola_Hours': '{:.1f} hrs'
-        }),
-        use_container_width=True,
-        hide_index=True,
-        selection_mode="single",
-        key="site_table"
-    )
-
-    # --- Conditional Detail Panels ---
-    if selected_rows and selected_rows['selection']['rows']:
-        selected_index = selected_rows['selection']['rows'][0]
-        selected_site = df_filtered.iloc[selected_index]
+    if selected_statuses:
+        df_filtered = df_filtered[df_filtered['Status'].isin(selected_statuses)]
+    
+    df_filtered = df_filtered[df_filtered['Distance_From_Chingola_km'] <= max_distance]
+    
+    # --- Summary Statistics Cards ---
+    st.subheader(f"📊 Summary Statistics ({len(df_filtered)} Properties)")
+    
+    col1, col2, col3, col4, col5 = st.columns(5)
+    
+    with col1:
+        delta_value = len(df_filtered) - len(df) if len(df_filtered) != len(df) else None
+        st.metric(
+            label="Filtered Sites",
+            value=f"{len(df_filtered)}",
+            delta=f"{delta_value} from total" if delta_value else None
+        )
+    
+    with col2:
+        if not df_filtered.empty:
+            avg_distance = df_filtered['Distance_From_Chingola_km'].mean()
+            st.metric("Avg Distance", f"{avg_distance:.0f} km")
+        else:
+            st.metric("Avg Distance", "N/A")
+    
+    with col3:
+        if not df_filtered.empty:
+            avg_time = df_filtered['Travel_Time_From_Chingola_Hours'].mean()
+            st.metric("Avg Travel Time", f"{avg_time:.1f} hrs")
+        else:
+            st.metric("Avg Travel Time", "N/A")
+    
+    with col4:
+        unique_commodities = df_filtered['Primary_Commodity'].nunique() if not df_filtered.empty else 0
+        st.metric("Commodities", unique_commodities)
+    
+    with col5:
+        unique_provinces = df_filtered['Province'].nunique() if not df_filtered.empty else 0
+        st.metric("Provinces", unique_provinces)
+    
+    st.markdown("---")
+    
+    # --- Main Content Area: Map and Charts ---
+    tab1, tab2, tab3 = st.tabs(["🗺️ Map View", "📈 Analytics", "📋 Data Table"])
+    
+    with tab1:
+        st.subheader("Geographic Distribution")
         
-        col_map, col_logistics = st.columns([1, 1])
-
-        with col_map:
-            st.subheader(f"📍 {selected_site['Property_Name']}")
+        if df_filtered.empty:
+            st.warning("⚠️ No properties match the current filters. Showing base location only.")
+        else:
+            st.info(f"📍 Displaying {len(df_filtered)} properties on the map")
+        
+        # Create and display the multi-property map
+        map_fig = create_multi_property_map(df_filtered, CHINGOLA_COORDS, CHINGOLA_NAME)
+        st.plotly_chart(map_fig, use_container_width=True)
+        
+        # Quick stats below map
+        if not df_filtered.empty:
+            col1, col2, col3 = st.columns(3)
             
-            map_data = pd.DataFrame({
-                'lat': [CHINGOLA_COORDS[0], selected_site['Latitude']],
-                'lon': [CHINGOLA_COORDS[1], selected_site['Longitude']],
-                'name': [CHINGOLA_NAME, selected_site['Property_Name']],
-                'color': ['Base', 'Site'] 
-            })
-
-            fig = px.scatter_mapbox(
-                map_data,
-                lat="lat",
-                lon="lon",
-                hover_name="name",
-                color="color",
-                color_discrete_map={'Base': '#00FF00', 'Site': '#FF0000'},
-                zoom=5,
-                height=400,
-                mapbox_style="carto-positron"
+            with col1:
+                nearest = df_filtered.nsmallest(1, 'Distance_From_Chingola_km').iloc[0]
+                st.markdown(f"**🎯 Nearest Property**")
+                st.markdown(f"{nearest['Property_Name']}")
+                st.markdown(f"📏 {nearest['Distance_From_Chingola_km']:.0f} km away")
+            
+            with col2:
+                farthest = df_filtered.nlargest(1, 'Distance_From_Chingola_km').iloc[0]
+                st.markdown(f"**🚀 Farthest Property**")
+                st.markdown(f"{farthest['Property_Name']}")
+                st.markdown(f"📏 {farthest['Distance_From_Chingola_km']:.0f} km away")
+            
+            with col3:
+                top_commodity = df_filtered['Primary_Commodity'].value_counts().iloc[0]
+                top_commodity_name = df_filtered['Primary_Commodity'].value_counts().index[0]
+                st.markdown(f"**⚒️ Top Commodity**")
+                st.markdown(f"{top_commodity_name}")
+                st.markdown(f"📊 {top_commodity} properties")
+    
+    with tab2:
+        st.subheader("Analytics Dashboard")
+        
+        if df_filtered.empty:
+            st.warning("⚠️ No data to display. Adjust your filters.")
+        else:
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                # Commodity Distribution
+                st.markdown("#### Commodity Distribution")
+                commodity_counts = df_filtered['Primary_Commodity'].value_counts().head(10)
+                fig_commodity = px.bar(
+                    x=commodity_counts.values,
+                    y=commodity_counts.index,
+                    orientation='h',
+                    labels={'x': 'Number of Properties', 'y': 'Commodity'},
+                    color=commodity_counts.values,
+                    color_continuous_scale='Viridis'
+                )
+                fig_commodity.update_layout(
+                    showlegend=False,
+                    height=400,
+                    margin=dict(l=0, r=0, t=30, b=0)
+                )
+                st.plotly_chart(fig_commodity, use_container_width=True)
+                
+                # Status Distribution
+                st.markdown("#### Property Status")
+                status_counts = df_filtered['Status'].value_counts()
+                fig_status = px.pie(
+                    values=status_counts.values,
+                    names=status_counts.index,
+                    hole=0.4
+                )
+                fig_status.update_layout(
+                    height=350,
+                    margin=dict(l=0, r=0, t=30, b=0)
+                )
+                st.plotly_chart(fig_status, use_container_width=True)
+            
+            with col2:
+                # Province Distribution
+                st.markdown("#### Province Distribution")
+                province_counts = df_filtered['Province'].value_counts()
+                fig_province = px.bar(
+                    x=province_counts.values,
+                    y=province_counts.index,
+                    orientation='h',
+                    labels={'x': 'Number of Properties', 'y': 'Province'},
+                    color=province_counts.values,
+                    color_continuous_scale='Blues'
+                )
+                fig_province.update_layout(
+                    showlegend=False,
+                    height=400,
+                    margin=dict(l=0, r=0, t=30, b=0)
+                )
+                st.plotly_chart(fig_province, use_container_width=True)
+                
+                # Distance Distribution
+                st.markdown("#### Distance from Base Distribution")
+                fig_distance = px.histogram(
+                    df_filtered,
+                    x='Distance_From_Chingola_km',
+                    nbins=20,
+                    labels={'Distance_From_Chingola_km': 'Distance (km)', 'count': 'Number of Properties'}
+                )
+                fig_distance.update_layout(
+                    showlegend=False,
+                    height=350,
+                    margin=dict(l=0, r=0, t=30, b=0)
+                )
+                st.plotly_chart(fig_distance, use_container_width=True)
+    
+    with tab3:
+        st.subheader("Property Data Table")
+        
+        if df_filtered.empty:
+            st.warning("⚠️ No properties match the current filters.")
+        else:
+            st.markdown(f"*Displaying {len(df_filtered)} of {len(df)} total properties*")
+            
+            # Display table with selection
+            display_columns = [
+                'Property_Name',
+                'Province',
+                'Clean_District',
+                'Primary_Commodity',
+                'Commodity_2',
+                'Commodity_3',
+                'Latitude',
+                'Longitude',
+                'Status',
+                'Distance_From_Chingola_km',
+                'Travel_Time_From_Chingola_Hours'
+            ]
+            
+            st.dataframe(
+                df_filtered[display_columns].rename(columns={
+                    'Property_Name': 'Property',
+                    'Clean_District': 'District',
+                    'Primary_Commodity': 'Primary',
+                    'Commodity_2': 'Secondary',
+                    'Commodity_3': 'Tertiary',
+                    'Latitude': 'Lat',
+                    'Longitude': 'Lon',
+                    'Distance_From_Chingola_km': 'Distance',
+                    'Travel_Time_From_Chingola_Hours': 'Travel Time'
+                }).style.format({
+                    'Distance': '{:.0f} km',
+                    'Travel Time': '{:.1f} hrs',
+                    'Lat': '{:.4f}',
+                    'Lon': '{:.4f}'
+                }),
+                use_container_width=True,
+                hide_index=True,
+                selection_mode="single-row",
+                key="property_table",
+                height=400
             )
             
-            center_lat = (CHINGOLA_COORDS[0] + selected_site['Latitude']) / 2
-            center_lon = (CHINGOLA_COORDS[1] + selected_site['Longitude']) / 2
-            fig.update_layout(mapbox_center={"lat": center_lat, "lon": center_lon})
-            
-            st.plotly_chart(fig, use_container_width=True)
+            # Property Detail Section
+            if "property_table" in st.session_state and st.session_state.property_table.get('selection', {}).get('rows'):
+                selected_idx = st.session_state.property_table['selection']['rows'][0]
+                selected_property = df_filtered.iloc[selected_idx]
+                
+                st.markdown("---")
+                st.subheader(f"📍 {selected_property['Property_Name']}")
+                
+                # Property details in organized columns
+                col1, col2, col3, col4 = st.columns(4)
+                
+                with col1:
+                    st.markdown("**Location**")
+                    st.markdown(f"Province: {selected_property['Province']}")
+                    st.markdown(f"District: {selected_property['Clean_District']}")
+                    st.markdown(f"Coordinates: ({selected_property['Latitude']:.4f}, {selected_property['Longitude']:.4f})")
+                
+                with col2:
+                    st.markdown("**Distance & Travel**")
+                    st.markdown(f"Distance: {selected_property['Distance_From_Chingola_km']:.0f} km")
+                    st.markdown(f"Travel Time: {selected_property['Travel_Time_From_Chingola_Hours']:.1f} hrs")
+                    st.markdown(f"Status: {selected_property['Status']}")
+                
+                with col3:
+                    st.markdown("**Commodities**")
+                    st.markdown(f"Primary: {selected_property['Primary_Commodity']}")
+                    if pd.notna(selected_property['Commodity_2']):
+                        st.markdown(f"Secondary: {selected_property['Commodity_2']}")
+                    if pd.notna(selected_property['Commodity_3']):
+                        st.markdown(f"Tertiary: {selected_property['Commodity_3']}")
+                
+                with col4:
+                    st.markdown("**Geology**")
+                    st.markdown(f"Classification:")
+                    st.markdown(f"*{selected_property['Geology_Classification']}*")
+                
+                # Detailed descriptions
+                with st.expander("📖 View Detailed Information"):
+                    st.markdown("**Location Description:**")
+                    st.write(selected_property['District/Town'])
+                    
+                    st.markdown("**Reserve Information:**")
+                    st.write(selected_property['Reserves'])
+                    
+                    st.markdown("**Geological Description:**")
+                    st.write(selected_property['Geology_Description'])
+                
+                # Mini map for selected property
+                st.markdown("#### Property Location Map")
+                mini_map_data = pd.DataFrame({
+                    'lat': [CHINGOLA_COORDS[0], selected_property['Latitude']],
+                    'lon': [CHINGOLA_COORDS[1], selected_property['Longitude']],
+                    'name': [CHINGOLA_NAME, selected_property['Property_Name']],
+                    'type': ['Base', 'Property']
+                })
+                
+                mini_fig = px.scatter_mapbox(
+                    mini_map_data,
+                    lat='lat',
+                    lon='lon',
+                    hover_name='name',
+                    color='type',
+                    color_discrete_map={'Base': '#00C853', 'Property': '#FF5722'},
+                    zoom=6,
+                    height=400,
+                    mapbox_style="carto-positron"
+                )
+                
+                # Add line connecting base to property
+                mini_fig.add_trace(go.Scattermapbox(
+                    lon=[CHINGOLA_COORDS[1], selected_property['Longitude']],
+                    lat=[CHINGOLA_COORDS[0], selected_property['Latitude']],
+                    mode='lines',
+                    line=dict(width=2, color='blue'),
+                    name='Route',
+                    hoverinfo='skip'
+                ))
+                
+                mini_fig.update_layout(margin=dict(l=0, r=0, t=0, b=0))
+                st.plotly_chart(mini_fig, use_container_width=True)
+    
+    # --- Footer ---
+    st.markdown("---")
+    st.markdown("""
+        <div style='text-align: center; color: #666; padding: 20px;'>
+            <p>Zambia Mining Site Assessment Planner | Base: Chingola, Copperbelt Province</p>
+            <p style='font-size: 0.9em;'>Data includes 239 mining properties • 27 commodities • 10 provinces</p>
+        </div>
+    """, unsafe_allow_html=True)
 
-        with col_logistics:
-            st.subheader("📊 Logistics & Location")
-            st.markdown(f"**Province:** {selected_site.get('Province', 'Unknown')}")
-            st.markdown(f"**District:** {selected_site.get('District/Town', 'Unknown')}")
-            st.divider()
-            c1, c2 = st.columns(2)
-            c1.metric("Distance", f"{selected_site['Distance_From_Chingola_km']:.0f} km")
-            c2.metric("Est. Time", f"{selected_site['Travel_Time_From_Chingola_Hours']:.1f} hrs")
-            st.info(f"**Status:** {selected_site.get('Status', 'Unknown')}")
-
-        st.markdown("---")
-        st.subheader("💎 Mineralogy & Geology")
-        col_mineral, col_geology = st.columns(2)
-        with col_mineral:
-            st.markdown("**Commodities:**")
-            st.markdown(f"- **Primary:** {selected_site.get('Primary_Commodity', '-')}")
-            st.markdown(f"- **Secondary:** {selected_site.get('Commodity_2', '-')}")
-            # Check for Commodity 3 existence
-            c3 = selected_site.get('Commodity_3', '-')
-            if pd.notna(c3): st.markdown(f"- **Tertiary:** {c3}")
-            
-            # Show reserves
-            reserves = selected_site.get('Reserves', '')
-            if pd.notna(reserves) and str(reserves).strip() != '':
-                st.markdown(f"**Reserves:** {reserves}")
-
-        with col_geology:
-            st.markdown("**Geological Assessment:**")
-            st.markdown(f"**Classification:** {selected_site.get('Geology_Classification', '-')}")
-            st.caption(f"**Description:** {selected_site.get('Geology_Description', 'No description available.')}")
-    else:
-        st.info("Select a site from the table above to visualize its location and planning details.")
-
-# --- LOGIN CONTROL FLOW ---
-# The login widget
-name, authentication_status, username = authenticator.login('Login', 'main')
-
-if authentication_status:
-    # If successful, run the dashboard
-    main_dashboard()
-elif authentication_status is False:
-    st.error('Username/password is incorrect')
-elif authentication_status is None:
-    st.warning('Please enter your username and password')
+# --- Run Application ---
+if __name__ == "__main__":
+    run_app()
