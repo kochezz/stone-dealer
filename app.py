@@ -3,11 +3,10 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 import os
+import streamlit_authenticator as stauth
 
 # --- Configuration Constants ---
-# The app looks for this file in the same directory as app.py
 DATA_FILENAME = "zambia_mining_app_data.csv" 
-
 CHINGOLA_COORDS = (-12.5333, 27.8500)
 CHINGOLA_NAME = "Chingola (Base of Operations)"
 
@@ -17,6 +16,27 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+# --- AUTHENTICATION CONFIG (Restored) ---
+# This block attempts to load secrets for password protection.
+# If running locally, ensure .streamlit/secrets.toml exists.
+# If running on cloud, ensure Secrets are configured in the dashboard.
+try:
+    auth_config = {
+        'credentials': st.secrets['credentials'],
+        'cookie': st.secrets['cookie']
+    }
+    
+    authenticator = stauth.Authenticate(
+        auth_config['credentials'],
+        auth_config['cookie']['name'],
+        auth_config['cookie']['key'],
+        auth_config['cookie']['expiry_days'],
+    )
+except Exception as e:
+    st.error("Authentication Error: Could not load secrets.")
+    st.info("Please ensure you have a .streamlit/secrets.toml file (local) or Secrets configured (cloud).")
+    st.stop()
 
 # --- Function to Load Data ---
 @st.cache_data
@@ -38,12 +58,10 @@ def load_data(file_path):
     
     except FileNotFoundError:
         st.error(f"Error: Data file '{DATA_FILENAME}' not found.")
-        st.info("Please ensure the merged CSV file is committed to your repository.")
         return pd.DataFrame()
 
 # --- MAIN APPLICATION LOGIC ---
-
-def run_app():
+def main_dashboard():
     df = load_data(DATA_FILENAME)
 
     if df.empty:
@@ -60,15 +78,14 @@ def run_app():
     # --- Sidebar Filters ---
     st.sidebar.header("🗺️ Filter Properties")
 
-    # 1. NEW: Province Filter
+    # 1. Province Filter (From New File)
     selected_provinces = st.sidebar.multiselect(
         "Filter by Province:",
         options=sorted(df['Province'].unique()),
         default=[]
     )
 
-    # 2. District Filter
-    # Optional: If a province is selected, limit districts to that province
+    # 2. District Filter (Dynamic based on Province)
     if selected_provinces:
         available_districts = df[df['Province'].isin(selected_provinces)]['District/Town'].unique()
     else:
@@ -103,10 +120,10 @@ def run_app():
     st.subheader(f"Filtered Properties ({len(df_filtered)} Sites)")
     st.caption("Select a row below to populate the map and detail panels.")
 
-    # Added 'Province' to the table view
+    # Table View (Includes Province)
     table_columns = [
         'Property_Name', 
-        'Province',          # <--- NEW COLUMN
+        'Province', 
         'District/Town', 
         'Primary_Commodity', 
         'Status', 
@@ -114,7 +131,6 @@ def run_app():
         'Travel_Time_From_Chingola_Hours'
     ]
     
-    # Safe column selection (in case some are missing)
     existing_cols = [c for c in table_columns if c in df_filtered.columns]
 
     selected_rows = st.dataframe(
@@ -165,43 +181,35 @@ def run_app():
 
         with col_logistics:
             st.subheader("📊 Logistics & Location")
-            
-            # Display Province clearly
             st.markdown(f"**Province:** {selected_site.get('Province', 'Unknown')}")
             st.markdown(f"**District:** {selected_site.get('District/Town', 'Unknown')}")
-            
             st.divider()
-            
             c1, c2 = st.columns(2)
             c1.metric("Distance", f"{selected_site['Distance_From_Chingola_km']:.0f} km")
             c2.metric("Est. Time", f"{selected_site['Travel_Time_From_Chingola_Hours']:.1f} hrs")
-            
             st.info(f"**Status:** {selected_site.get('Status', 'Unknown')}")
 
-        # --- Detail View ---
         st.markdown("---")
         st.subheader("💎 Mineralogy & Geology")
-        
         col_mineral, col_geology = st.columns(2)
-        
         with col_mineral:
             st.markdown("**Commodities:**")
             st.markdown(f"- **Primary:** {selected_site.get('Primary_Commodity', '-')}")
             st.markdown(f"- **Secondary:** {selected_site.get('Commodity_2', '-')}")
-            st.markdown(f"- **Tertiary:** {selected_site.get('Commodity_3', '-')}")
-            
-            # Show reserves if available
-            reserves = selected_site.get('Reserves', '')
-            if pd.notna(reserves) and str(reserves).strip() != '':
-                st.markdown(f"**Reserves:** {reserves}")
-
         with col_geology:
             st.markdown("**Geological Assessment:**")
-            st.markdown(f"**Classification:** {selected_site.get('Geology_Classification', '-')}")
             st.caption(f"**Description:** {selected_site.get('Geology_Description', 'No description available.')}")
-
     else:
         st.info("Select a site from the table above to visualize its location and planning details.")
 
-if __name__ == "__main__":
-    run_app()
+# --- LOGIN CONTROL FLOW ---
+name, authentication_status, username = authenticator.login('Login', 'main')
+
+if authentication_status:
+    authenticator.logout('Logout', 'sidebar')
+    st.sidebar.success(f'Welcome, **{name}**')
+    main_dashboard()
+elif authentication_status is False:
+    st.error('Username/password is incorrect')
+elif authentication_status is None:
+    st.warning('Please enter your username and password')
