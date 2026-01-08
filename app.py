@@ -4,34 +4,9 @@ import numpy as np
 import plotly.express as px
 import os
 import streamlit_authenticator as stauth
-import copy # <--- Make sure this is imported at the top
+import yaml
+from yaml.loader import SafeLoader
 
-# --- AUTHENTICATION CONFIG (Fixed) ---
-try:
-    # 1. Fetch secrets
-    # We use copy.deepcopy() to ensure the authenticator can modify the dict 
-    # (e.g., for hashing) without crashing on the read-only st.secrets.
-    if 'credentials' not in st.secrets:
-        raise KeyError("Missing '[credentials]' section in secrets.toml")
-        
-    if 'cookie' not in st.secrets:
-        raise KeyError("Missing '[cookie]' section in secrets.toml")
-
-    credentials = copy.deepcopy(st.secrets['credentials'])
-    cookie = copy.deepcopy(st.secrets['cookie'])
-    
-    # 2. Setup Authenticator
-    authenticator = stauth.Authenticate(
-        credentials,
-        cookie['name'],
-        cookie['key'],
-        cookie['expiry_days'],
-    )
-except Exception as e:
-    # This will now print the EXACT error to the screen so we can fix it
-    st.error(f"Authentication Error: {e}")
-    st.info("Check your Streamlit Cloud Secrets to ensure they match the TOML format below.")
-    st.stop()
 # --- Configuration Constants ---
 DATA_FILENAME = "zambia_mining_app_data.csv" 
 CHINGOLA_COORDS = (-12.5333, 27.8500)
@@ -44,25 +19,38 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- AUTHENTICATION CONFIG (Restored) ---
-# This block attempts to load secrets for password protection.
-# If running locally, ensure .streamlit/secrets.toml exists.
-# If running on cloud, ensure Secrets are configured in the dashboard.
+# --- HELPER: Fix Secrets Recursion Error ---
+def convert_secrets_to_dict(secrets_obj):
+    """
+    Recursively converts Streamlit Secrets to a standard Python dictionary.
+    This prevents the 'maximum recursion depth exceeded' error caused by 
+    passing the internal Secrets object directly to external libraries.
+    """
+    if isinstance(secrets_obj, dict) or type(secrets_obj).__name__ == "Secrets":
+        return {k: convert_secrets_to_dict(v) for k, v in secrets_obj.items()}
+    return secrets_obj
+
+# --- AUTHENTICATION CONFIG ---
 try:
-    auth_config = {
-        'credentials': st.secrets['credentials'],
-        'cookie': st.secrets['cookie']
-    }
+    # 1. Convert st.secrets to a plain dictionary (Critical Fix)
+    secrets_dict = convert_secrets_to_dict(st.secrets)
     
+    # 2. Validation
+    if 'credentials' not in secrets_dict:
+        raise KeyError("Missing '[credentials]' section in secrets.toml")
+    if 'cookie' not in secrets_dict:
+        raise KeyError("Missing '[cookie]' section in secrets.toml")
+
+    # 3. Setup Authenticator
     authenticator = stauth.Authenticate(
-        auth_config['credentials'],
-        auth_config['cookie']['name'],
-        auth_config['cookie']['key'],
-        auth_config['cookie']['expiry_days'],
+        secrets_dict['credentials'],
+        secrets_dict['cookie']['name'],
+        secrets_dict['cookie']['key'],
+        secrets_dict['cookie']['expiry_days'],
     )
 except Exception as e:
-    st.error("Authentication Error: Could not load secrets.")
-    st.info("Please ensure you have a .streamlit/secrets.toml file (local) or Secrets configured (cloud).")
+    st.error(f"Authentication Setup Error: {e}")
+    st.info("Please check your Streamlit Cloud Secrets configuration.")
     st.stop()
 
 # --- Function to Load Data ---
@@ -84,10 +72,10 @@ def load_data(file_path):
         return df.dropna(subset=['Latitude', 'Longitude'])
     
     except FileNotFoundError:
-        st.error(f"Error: Data file '{DATA_FILENAME}' not found.")
+        st.error(f"Error: Data file '{DATA_FILENAME}' not found in repository.")
         return pd.DataFrame()
 
-# --- MAIN APPLICATION LOGIC ---
+# --- MAIN DASHBOARD LOGIC ---
 def main_dashboard():
     df = load_data(DATA_FILENAME)
 
@@ -95,8 +83,14 @@ def main_dashboard():
         st.stop()
 
     # --- Title and Header ---
-    st.title("🇿🇲 Mining Site Assessment Planner")
-    st.markdown("### Base of Operations: **Chingola**")
+    c1, c2 = st.columns([3, 1])
+    with c1:
+        st.title("🇿🇲 Mining Site Assessment Planner")
+        st.markdown("### Base of Operations: **Chingola**")
+    with c2:
+        # Logout button in the main area (top right)
+        authenticator.logout('Logout', 'main')
+
     st.markdown("""
         Use the sidebar filters to select properties for viability assessment.
         Select a row in the table below to view travel logistics and details.
@@ -104,15 +98,16 @@ def main_dashboard():
 
     # --- Sidebar Filters ---
     st.sidebar.header("🗺️ Filter Properties")
+    st.sidebar.markdown(f"User: **{st.session_state['name']}**") # Show logged in user
 
-    # 1. Province Filter (From New File)
+    # 1. Province Filter
     selected_provinces = st.sidebar.multiselect(
         "Filter by Province:",
         options=sorted(df['Province'].unique()),
         default=[]
     )
 
-    # 2. District Filter (Dynamic based on Province)
+    # 2. District Filter (Dynamic)
     if selected_provinces:
         available_districts = df[df['Province'].isin(selected_provinces)]['District/Town'].unique()
     else:
@@ -133,13 +128,10 @@ def main_dashboard():
 
     # --- Apply Filters ---
     df_filtered = df.copy()
-    
     if selected_provinces:
         df_filtered = df_filtered[df_filtered['Province'].isin(selected_provinces)]
-        
     if selected_locales:
         df_filtered = df_filtered[df_filtered['District/Town'].isin(selected_locales)]
-        
     if selected_commodities:
         df_filtered = df_filtered[df_filtered['Primary_Commodity'].isin(selected_commodities)]
 
@@ -147,7 +139,6 @@ def main_dashboard():
     st.subheader(f"Filtered Properties ({len(df_filtered)} Sites)")
     st.caption("Select a row below to populate the map and detail panels.")
 
-    # Table View (Includes Province)
     table_columns = [
         'Property_Name', 
         'Province', 
@@ -158,6 +149,7 @@ def main_dashboard():
         'Travel_Time_From_Chingola_Hours'
     ]
     
+    # Handle missing columns gracefully
     existing_cols = [c for c in table_columns if c in df_filtered.columns]
 
     selected_rows = st.dataframe(
@@ -223,18 +215,28 @@ def main_dashboard():
             st.markdown("**Commodities:**")
             st.markdown(f"- **Primary:** {selected_site.get('Primary_Commodity', '-')}")
             st.markdown(f"- **Secondary:** {selected_site.get('Commodity_2', '-')}")
+            # Check for Commodity 3 existence
+            c3 = selected_site.get('Commodity_3', '-')
+            if pd.notna(c3): st.markdown(f"- **Tertiary:** {c3}")
+            
+            # Show reserves
+            reserves = selected_site.get('Reserves', '')
+            if pd.notna(reserves) and str(reserves).strip() != '':
+                st.markdown(f"**Reserves:** {reserves}")
+
         with col_geology:
             st.markdown("**Geological Assessment:**")
+            st.markdown(f"**Classification:** {selected_site.get('Geology_Classification', '-')}")
             st.caption(f"**Description:** {selected_site.get('Geology_Description', 'No description available.')}")
     else:
         st.info("Select a site from the table above to visualize its location and planning details.")
 
 # --- LOGIN CONTROL FLOW ---
+# The login widget
 name, authentication_status, username = authenticator.login('Login', 'main')
 
 if authentication_status:
-    authenticator.logout('Logout', 'sidebar')
-    st.sidebar.success(f'Welcome, **{name}**')
+    # If successful, run the dashboard
     main_dashboard()
 elif authentication_status is False:
     st.error('Username/password is incorrect')
