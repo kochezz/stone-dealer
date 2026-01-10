@@ -55,7 +55,7 @@ def check_password():
         st.markdown("""
             <div style='text-align: center; padding: 50px;'>
                 <h1>⛏️ Zambia Mining Intelligence Platform</h1>
-                <p style='color: #666; font-size: 1.2em;'>BEDA</p>
+                <p style='color: #666; font-size: 1.2em;'>Vilagio Trading Limited</p>
             </div>
         """, unsafe_allow_html=True)
         
@@ -76,7 +76,7 @@ def check_password():
         st.markdown("""
             <div style='text-align: center; padding: 50px;'>
                 <h1>⛏️ Zambia Mining Intelligence Platform</h1>
-                <p style='color: #666; font-size: 1.2em;'>Powered By BEDA</p>
+                <p style='color: #666; font-size: 1.2em;'>Business Enterprise Data Analytics(BEDA)</p>
             </div>
         """, unsafe_allow_html=True)
         
@@ -537,7 +537,7 @@ elif view_mode == "💎 Geological Analysis":
     tab1, tab2 = st.tabs(["📍 Site Distribution", "🗺️ Geological Patterns"])
     
     with tab1:
-        # Standard site map
+        # Standard site map - LARGER for better visibility
         df_geo = df_filtered.copy() if analysis_commodity == 'All' else df_filtered[df_filtered['Primary_Commodity'] == analysis_commodity]
         
         fig_geo1 = px.scatter_mapbox(
@@ -551,7 +551,7 @@ elif view_mode == "💎 Geological Analysis":
             hover_data=['Province', 'Clean_District', 'Geology_Classification'],
             zoom=5.5,
             center={"lat": -14.5, "lon": 28.5},
-            height=600
+            height=750  # Increased from 600 to 750
         )
         
         fig_geo1.update_layout(
@@ -562,7 +562,7 @@ elif view_mode == "💎 Geological Analysis":
         st.plotly_chart(fig_geo1, use_container_width=True)
     
     with tab2:
-        # Geological patterns map
+        # Geological patterns map - LARGER for better visibility of trend lines
         df_geo = df_filtered.copy() if analysis_commodity == 'All' else df_filtered[df_filtered['Primary_Commodity'] == analysis_commodity]
         
         fig_geo2 = px.scatter_mapbox(
@@ -574,7 +574,7 @@ elif view_mode == "💎 Geological Analysis":
             hover_data=['Primary_Commodity', 'Province'],
             zoom=5.5,
             center={"lat": -14.5, "lon": 28.5},
-            height=600
+            height=750  # Increased from 600 to 750 for better visibility
         )
         
         # Add trend lines if requested
@@ -606,14 +606,12 @@ elif view_mode == "💎 Geological Analysis":
         
         st.plotly_chart(fig_geo2, use_container_width=True)
     
-    # Geological insights
-    st.markdown("#### 🔬 Geological Insights")
-    
-    # Analyze selected commodity
+    # Geological insights - COMPACT METRICS ONLY (always visible)
     if analysis_commodity != 'All':
         belt_info = identify_mineral_belts(df, analysis_commodity)
         
         if belt_info:
+            st.markdown("#### 🔬 Belt Metrics")
             col1, col2, col3, col4 = st.columns(4)
             
             with col1:
@@ -627,27 +625,41 @@ elif view_mode == "💎 Geological Analysis":
             
             with col4:
                 st.metric("Linearity", f"{belt_info['linearity']:.0%}")
+    
+    # Detailed analysis in expanders (collapsed by default)
+    with st.expander("📊 Detailed Belt Analysis", expanded=False):
+        if analysis_commodity != 'All':
+            belt_info = identify_mineral_belts(df, analysis_commodity)
             
-            st.markdown(f"""
-            <div class='insight-box'>
-            <strong>{analysis_commodity} Belt Analysis:</strong><br>
-            The {analysis_commodity} deposits show a {('strong' if belt_info['linearity'] > 0.7 else 'moderate')} linear pattern, 
-            trending at {belt_info['bearing']:.0f}° (bearing) over approximately {belt_info['length_km']:.0f} km. 
-            This pattern suggests {('a well-defined mineral belt' if belt_info['linearity'] > 0.7 else 'scattered deposits with some alignment')}.
-            </div>
-            """, unsafe_allow_html=True)
+            if belt_info:
+                st.markdown(f"""
+                **{analysis_commodity} Belt Analysis:**
+                
+                The {analysis_commodity} deposits show a **{('strong' if belt_info['linearity'] > 0.7 else 'moderate')} linear pattern**, 
+                trending at **{belt_info['bearing']:.0f}° (bearing)** over approximately **{belt_info['length_km']:.0f} km**. 
+                
+                This pattern suggests {('a well-defined mineral belt' if belt_info['linearity'] > 0.7 else 'scattered deposits with some alignment')}.
+                
+                **Key Characteristics:**
+                - **Linearity Index**: {belt_info['linearity']:.2f} (0=scattered, 1=perfectly linear)
+                - **Center Point**: {belt_info['center_lat']:.4f}°, {belt_info['center_lon']:.4f}°
+                - **Variance Explained**: {belt_info['variance_explained']:.1f}% of spatial variation
+                """)
+        else:
+            st.info("Select a specific commodity to view detailed belt analysis")
     
-    # Geology patterns table
-    st.markdown("#### 🧪 Geological Formation Analysis")
-    
-    geology_patterns = analyze_geology_patterns(df_filtered)
-    
-    if len(geology_patterns) > 0:
-        st.dataframe(
-            geology_patterns.head(10),
-            use_container_width=True,
-            hide_index=True
-        )
+    # Geology patterns table in expander
+    with st.expander("🧪 Geological Formation Details", expanded=False):
+        geology_patterns = analyze_geology_patterns(df_filtered)
+        
+        if len(geology_patterns) > 0:
+            st.dataframe(
+                geology_patterns.head(10),
+                use_container_width=True,
+                hide_index=True
+            )
+        else:
+            st.info("No geological formation patterns to display for current filters")
 
 elif view_mode == "🚗 Accessibility":
     # ACCESSIBILITY TAB
@@ -698,7 +710,7 @@ elif view_mode == "🚗 Accessibility":
         },
         zoom=5.5,
         center={"lat": -14.5, "lon": 28.5},
-        height=600
+        height=700  # Increased from 600 for consistency
     )
     
     fig_access.update_layout(
@@ -762,7 +774,7 @@ elif view_mode == "🚗 Accessibility":
 st.markdown("---")
 st.markdown("""
     <div style='text-align: center; color: #666; padding: 20px;'>
-        <p>Zambia Mining Intelligence Platform | Business Enterprise Data Analytics(BEDA)</p>
+        <p>Zambia Mining Intelligence Platform | BEDA</p>
         <p>Phase 1: Density Analysis • Geological Mapping • Accessibility Assessment</p>
     </div>
 """, unsafe_allow_html=True)
