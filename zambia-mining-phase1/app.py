@@ -562,26 +562,56 @@ elif view_mode == "💎 Geological Analysis":
         st.plotly_chart(fig_geo1, use_container_width=True)
     
     with tab2:
-        # Geological patterns map - LARGER for better visibility of trend lines
+        # Geological patterns map - SIMPLIFIED LEGEND for better visibility
         df_geo = df_filtered.copy() if analysis_commodity == 'All' else df_filtered[df_filtered['Primary_Commodity'] == analysis_commodity]
+        
+        # Group similar geology types to reduce legend items
+        def simplify_geology(geo_class):
+            if pd.isna(geo_class):
+                return 'Unknown'
+            geo_lower = str(geo_class).lower()
+            if 'stratiform' in geo_lower:
+                return 'Stratiform Deposits'
+            elif 'vein' in geo_lower or 'shear' in geo_lower:
+                return 'Vein/Shear Deposits'
+            elif 'supergene' in geo_lower:
+                return 'Supergene Enriched'
+            elif 'sediment' in geo_lower:
+                return 'Sedimentary Deposits'
+            elif 'breccia' in geo_lower:
+                return 'Breccia-Hosted'
+            elif 'hydrothermal' in geo_lower:
+                return 'Hydrothermal'
+            elif 'volcanogenic' in geo_lower:
+                return 'Volcanogenic'
+            else:
+                return 'Other Deposits'
+        
+        df_geo['Geology_Simplified'] = df_geo['Geology_Classification'].apply(simplify_geology)
         
         fig_geo2 = px.scatter_mapbox(
             df_geo,
             lat='Latitude',
             lon='Longitude',
-            color='Geology_Classification',
+            color='Geology_Simplified',
             hover_name='Property_Name',
-            hover_data=['Primary_Commodity', 'Province'],
+            hover_data={
+                'Primary_Commodity': True, 
+                'Province': True,
+                'Geology_Classification': True,  # Show full detail on hover
+                'Geology_Simplified': False
+            },
             zoom=5.5,
             center={"lat": -14.5, "lon": 28.5},
-            height=750  # Increased from 600 to 750 for better visibility
+            height=750,
+            color_discrete_sequence=px.colors.qualitative.Set2
         )
         
         # Add trend lines if requested
         if show_trend_lines:
             commodities_to_analyze = [analysis_commodity] if analysis_commodity != 'All' else ['Copper', 'Gold', 'Iron']
             
-            colors = {'Copper': 'red', 'Gold': 'yellow', 'Iron': 'orange', 'Diamond': 'blue'}
+            colors = {'Copper': 'red', 'Gold': 'gold', 'Iron': 'orange', 'Diamond': 'cyan'}
             
             for commodity in commodities_to_analyze:
                 if commodity in df['Primary_Commodity'].values:
@@ -593,15 +623,25 @@ elif view_mode == "💎 Geological Analysis":
                                 lat=[trend['start_lat'], trend['end_lat']],
                                 lon=[trend['start_lon'], trend['end_lon']],
                                 mode='lines',
-                                line=dict(width=3, color=colors.get(commodity, 'red')),
-                                name=f'{commodity} Trend',
-                                hoverinfo='name'
+                                line=dict(width=4, color=colors.get(commodity, 'red')),
+                                name=f'{commodity} Belt Trend',
+                                hoverinfo='name',
+                                showlegend=True
                             )
                         )
         
         fig_geo2.update_layout(
             mapbox_style="open-street-map",
-            margin={"r": 0, "t": 0, "l": 0, "b": 0}
+            margin={"r": 0, "t": 0, "l": 0, "b": 0},
+            legend=dict(
+                orientation="v",
+                yanchor="top",
+                y=0.99,
+                xanchor="left",
+                x=0.01,
+                bgcolor="rgba(255, 255, 255, 0.8)",
+                font=dict(size=10)
+            )
         )
         
         st.plotly_chart(fig_geo2, use_container_width=True)
