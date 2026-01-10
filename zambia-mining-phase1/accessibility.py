@@ -21,6 +21,12 @@ def calculate_accessibility_score(df):
     DataFrame with added Accessibility_Score and Access_Category columns
     """
     
+    # Convert numeric columns to proper types (handle strings/NaN)
+    numeric_cols = ['Distance_From_Chingola_km', 'Travel_Time_From_Chingola_Hours']
+    for col in numeric_cols:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors='coerce')
+    
     scores = pd.DataFrame(index=df.index)
     
     # Component 1: Distance from Chingola (40 points, inverse scoring)
@@ -49,16 +55,17 @@ def calculate_accessibility_score(df):
         scores['travel_time_score'] = 15  # Default neutral score
     
     # Component 3: Distance to nearest center (20 points, inverse scoring)
-    if 'Distance_Nearest_Center_km' in df.columns:
-        max_center_dist = df['Distance_Nearest_Center_km'].max()
-        if max_center_dist > 0:
-            scores['nearest_center_score'] = (
-                20 * (1 - df['Distance_Nearest_Center_km'].fillna(max_center_dist) / max_center_dist)
-            )
-        else:
-            scores['nearest_center_score'] = 20
+    # NOTE: This column contains text descriptions, not numbers, so we'll use a default score
+    # based on district development instead
+    if 'Clean_District' in df.columns:
+        # Use district site count as proxy for development/accessibility
+        district_counts = df['Clean_District'].value_counts()
+        df_temp = df.copy()
+        df_temp['District_Site_Count'] = df_temp['Clean_District'].map(district_counts).fillna(1)
+        max_district_sites = df_temp['District_Site_Count'].max()
+        scores['center_score'] = 20 * (df_temp.loc[df.index, 'District_Site_Count'] / max_district_sites)
     else:
-        scores['nearest_center_score'] = 10  # Default neutral score
+        scores['center_score'] = 10  # Default neutral score
     
     # Component 4: Province infrastructure rating (10 points)
     # Based on general infrastructure development in each province
