@@ -55,7 +55,7 @@ def check_password():
         st.markdown("""
             <div style='text-align: center; padding: 50px;'>
                 <h1>⛏️ Zambia Mining Intelligence Platform</h1>
-                <p style='color: #666; font-size: 1.2em;'>Vilagio Trading Limited</p>
+                <p style='color: #666; font-size: 1.2em;'>BEDA</p>
             </div>
         """, unsafe_allow_html=True)
         
@@ -76,7 +76,7 @@ def check_password():
         st.markdown("""
             <div style='text-align: center; padding: 50px;'>
                 <h1>⛏️ Zambia Mining Intelligence Platform</h1>
-                <p style='color: #666; font-size: 1.2em;'>Vilagio Trading Limited</p>
+                <p style='color: #666; font-size: 1.2em;'>Powered By BEDA</p>
             </div>
         """, unsafe_allow_html=True)
         
@@ -762,7 +762,7 @@ elif view_mode == "🚗 Accessibility":
 st.markdown("---")
 st.markdown("""
     <div style='text-align: center; color: #666; padding: 20px;'>
-        <p>Zambia Mining Intelligence Platform | Vilagio Trading Limited</p>
+        <p>Zambia Mining Intelligence Platform | Business Enterprise Data Analytics(BEDA)</p>
         <p>Phase 1: Density Analysis • Geological Mapping • Accessibility Assessment</p>
     </div>
 """, unsafe_allow_html=True)
