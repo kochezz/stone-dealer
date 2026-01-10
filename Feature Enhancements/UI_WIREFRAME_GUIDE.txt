@@ -1,0 +1,455 @@
+ZAMBIA MINING APP - ENHANCED UI/UX WIREFRAME GUIDE
+================================================================================
+
+This document describes the visual layout and user interaction flow for the
+enhanced features. Imagine these as screens/sections in your app.
+
+================================================================================
+MAIN DASHBOARD LAYOUT - OVERVIEW
+================================================================================
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 🏔️ ZAMBIA MINING SITE INTELLIGENCE PLATFORM          👤 Vilagio Trading Ltd│
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  [📊 Overview] [🗺️ Site Explorer] [💎 Vein Analysis] [💰 Valuations]      │
+│  [📈 Analytics] [📄 Reports]                                               │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+TAB 1: OVERVIEW DASHBOARD (New Executive View)
+================================================================================
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ PORTFOLIO SNAPSHOT                                      Last Updated: Today │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│ ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐            │
+│ │ Total Sites     │  │ Active Sites    │  │ Est. Portfolio  │            │
+│ │                 │  │                 │  │ Value           │            │
+│ │      369        │  │      326        │  │  $2.4B USD      │            │
+│ │                 │  │     (88%)       │  │  (Estimated)    │            │
+│ └─────────────────┘  └─────────────────┘  └─────────────────┘            │
+│                                                                             │
+│ ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐            │
+│ │ Top Commodity   │  │ Avg Access Score│  │ High Priority   │            │
+│ │                 │  │                 │  │ Sites           │            │
+│ │   Copper        │  │      72/100     │  │       45        │            │
+│ │  (112 sites)    │  │  (Good access)  │  │                 │            │
+│ └─────────────────┘  └─────────────────┘  └─────────────────┘            │
+│                                                                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ COMMODITY BREAKDOWN                      GEOGRAPHIC DISTRIBUTION           │
+├────────────────────────────┬────────────────────────────────────────────────┤
+│                            │                                                │
+│  Copper     ████████  30%  │         [MAP SHOWING SITES BY PROVINCE]       │
+│  Gold       ███████   29%  │                                                │
+│  Diamond    ██        10%  │         Lusaka Province: 127 sites            │
+│  Iron       ██        10%  │         Central Province: 95 sites            │
+│  Others     ████      21%  │         Northern Province: 46 sites           │
+│                            │         ... (interactive heat map)            │
+│                            │                                                │
+└────────────────────────────┴────────────────────────────────────────────────┘
+
+================================================================================
+TAB 2: SITE EXPLORER MAP (Enhanced with Density Features)
+================================================================================
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ FILTERS                                                 🔍 Search Properties │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│ Select Commodity: [Copper ▼]                    Status: [All ▼]           │
+│                                                                             │
+│ Province: [All ▼]     District: [All ▼]                                   │
+│                                                                             │
+│ ┌─ DENSITY CONTROLS ──────────────────────────────────────────────────┐   │
+│ │                                                                      │   │
+│ │ View Mode: ◉ Top Sites  ○ Bottom Sites  ○ All Sites                │   │
+│ │                                                                      │   │
+│ │ Show Top: [──●──────────] 10                                        │   │
+│ │           1    10    25    50    100    All                         │   │
+│ │                                                                      │   │
+│ │ Ranking By: [Reserve Value ▼]                                       │   │
+│ │   Options: Reserve Value | Accessibility | Combined Score           │   │
+│ │                                                                      │   │
+│ │ [🌡️ Show Heat Map] [📊 Show Clusters]                              │   │
+│ │                                                                      │   │
+│ └──────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                          INTERACTIVE MAP                                    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│    [═══════════ ZAMBIA MAP WITH SITES ═══════════]                         │
+│                                                                             │
+│    Legend:                                                                 │
+│    ● Red (Rank 1-10)    Highest value/density                             │
+│    ● Orange (11-20)     High value                                         │
+│    ● Yellow (21-30)     Medium-high                                        │
+│    ● Green (31-50)      Medium                                             │
+│    ● Blue (51+)         Lower tier                                         │
+│                                                                             │
+│    Size = Reserve Quantity (larger = more reserves)                        │
+│    Hover = Quick stats  |  Click = Full details                           │
+│                                                                             │
+│    [Heat map overlay showing density concentrations]                       │
+│    [Cluster boundaries showing grouped sites]                              │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+SITE DETAIL POPUP (When clicking a marker):
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Mkushi Copper Project #1                                     [✕ Close]      │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Location: Central Province > Mkushi                                        │
+│ Coordinates: -13.62°, 29.39°                                               │
+│                                                                             │
+│ Commodity: Copper (Primary), Cobalt (Secondary)                            │
+│ Status: Active                                                              │
+│                                                                             │
+│ Reserves: 2.5M tonnes @ 1.8% Cu                                            │
+│ Est. Value: $142M USD (at current LME prices)                              │
+│ Ranking: #3 of 112 copper sites                                            │
+│                                                                             │
+│ Accessibility Score: 85/100 (Excellent)                                    │
+│   - 5km to paved road                                                      │
+│   - 12km to power line                                                     │
+│   - 25km to Mkushi town                                                    │
+│                                                                             │
+│ Geology: Stratiform Copper Deposit                                         │
+│                                                                             │
+│ [View Full Report] [Add to Watchlist] [Export]                            │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+TAB 3: VEIN & GEOLOGICAL ANALYSIS (Dual Map View)
+================================================================================
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ GEOLOGICAL INTELLIGENCE                                                     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│ Select Commodity: [Copper ▼]      Geology Type: [All ▼]                   │
+│                                                                             │
+│ ┌─ VISUALIZATION CONTROLS ─────────────────────────────────────────────┐   │
+│ │                                                                       │   │
+│ │ ☑ Show Mineral Belts     ☑ Show Trend Lines    ☑ Show Clusters      │   │
+│ │ ☑ Show Formations        ☐ Show Survey Overlay ☑ Show Vein Strikes  │   │
+│ │                                                                       │   │
+│ │ Analysis Method: ◉ Clustering  ○ Directional Trends  ○ Both         │   │
+│ │                                                                       │   │
+│ └───────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+├──────────────────────────────────┬──────────────────────────────────────────┤
+│ SITE DISTRIBUTION MAP            │ GEOLOGICAL PATTERNS MAP                  │
+├──────────────────────────────────┼──────────────────────────────────────────┤
+│                                  │                                          │
+│  [Map showing individual sites]  │  [Map showing patterns/trends]           │
+│                                  │                                          │
+│  Features:                       │  Features:                               │
+│  • Site markers by commodity     │  • Trend lines (vein directions)         │
+│  • Color coded by type           │  • Shaded mineral belt regions           │
+│  • Synchronized zoom/pan         │  • Cluster boundaries                    │
+│                                  │  • Strike/dip indicators                 │
+│                                  │                                          │
+│  Legend:                         │  Legend:                                 │
+│  ● Copper sites                  │  ━━━ Copper Belt (NE-SW trend)          │
+│  ● Gold sites                    │  ─ ─ Secondary mineralization            │
+│  ● Multi-commodity               │  ▒▒▒ High-density cluster                │
+│                                  │  ░░░ Peripheral zone                     │
+│                                  │                                          │
+└──────────────────────────────────┴──────────────────────────────────────────┘
+│                                                                             │
+│ GEOLOGICAL INSIGHTS                                                         │
+│ ─────────────────────────────────────────────────────────────────────────   │
+│                                                                             │
+│ Primary Copper Belt: NE-SW trending (bearing 045°)                         │
+│   - 89 sites aligned within 20km of trend line                             │
+│   - Length: ~180km  |  Average width: 25km                                 │
+│   - Geology: Predominantly Stratiform Copper deposits                      │
+│                                                                             │
+│ Major Clusters Identified:                                                 │
+│   1. Mkushi Cluster: 72 sites (predominantly copper)                       │
+│   2. Kabwe Cluster: 53 sites (mixed commodities)                           │
+│   3. Kasempa Cluster: 20 sites (copper, gold)                              │
+│                                                                             │
+│ Correlation with Known Deposits:                                           │
+│   ✓ 78% of sites within 10km of known formations                           │
+│   ✓ Strong alignment with Zambian Copperbelt geology                       │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+TAB 4: VALUATIONS & INVESTMENT ANALYSIS
+================================================================================
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ LME PRICE TRACKER                              Last Updated: 2 hours ago    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│ Copper:  $9,234/tonne  ▲ +2.3%  │  Zinc:   $2,845/tonne  ▼ -0.8%          │
+│ Nickel: $16,720/tonne  ▲ +1.1%  │  Gold:  $2,034/oz      ▲ +0.5%          │
+│                                                                             │
+│ [↻ Refresh Prices]  [📈 View Historical]  [⚙️ Configure Alerts]            │
+│                                                                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ PORTFOLIO VALUATION SUMMARY                                                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│ Total Estimated Value: $2.43B USD                                          │
+│   • Copper:   $1.85B  (76%)                                                │
+│   • Gold:     $0.38B  (16%)                                                │
+│   • Others:   $0.20B  (8%)                                                 │
+│                                                                             │
+│ Risk-Adjusted Value: $1.46B USD (60% confidence factor applied)            │
+│                                                                             │
+│ ┌───────────────────────────────────────────────────────────────────────┐  │
+│ │ Value Distribution Chart                                              │  │
+│ │                                                                       │  │
+│ │    [BAR CHART showing value by commodity]                            │  │
+│ │                                                                       │  │
+│ │    Copper  ████████████████████████  $1.85B                          │  │
+│ │    Gold    ████  $0.38B                                              │  │
+│ │    Iron    ██  $0.15B                                                │  │
+│ │    Others  █  $0.05B                                                 │  │
+│ │                                                                       │  │
+│ └───────────────────────────────────────────────────────────────────────┘  │
+│                                                                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ TOP 10 PROPERTIES BY VALUE                                                 │
+├──┬──────────────────────────────────┬──────────┬────────────┬──────────────┤
+│# │ Property Name                    │ Commodity│ Est. Value │ Access Score │
+├──┼──────────────────────────────────┼──────────┼────────────┼──────────────┤
+│1 │ Mkushi Mega Deposit              │ Copper   │ $325M      │ 92/100       │
+│2 │ Kabwe Central Complex            │ Copper   │ $298M      │ 88/100       │
+│3 │ Luanshya Extension               │ Copper   │ $245M      │ 95/100       │
+│4 │ Kasempa Gold Field               │ Gold     │ $187M      │ 65/100       │
+│5 │ Northern Iron Ridge              │ Iron     │ $156M      │ 58/100       │
+│  │ ... (expandable table)           │          │            │              │
+└──┴──────────────────────────────────┴──────────┴────────────┴──────────────┘
+│                                                                             │
+│ [Export to Excel] [Generate Investment Report] [📧 Email Summary]          │
+│                                                                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ INVESTMENT OPPORTUNITY MATRIX                                               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│ High │           QUICK WINS        │      PRIORITY TARGETS                  │
+│ Acc- │     ●                       │   ● ●  ●                               │
+│ ess  │       ●   ●                 │     ●    ●                             │
+│      │   ●                         │  ●        ●                            │
+│      ├─────────────────────────────┼────────────────────────────────────────┤
+│      │  CONSIDER IF STRATEGIC      │  LONG-TERM OPPORTUNITIES               │
+│ Low  │                             │         ●                              │
+│ Acc- │    ●     ●                  │       ●   ●    ●                       │
+│ ess  │        ●                    │              ●                         │
+│      │                             │                                        │
+│      └─────────────────────────────┴────────────────────────────────────────┤
+│         Low Value   →                              High Value               │
+│                                                                             │
+│ Color Legend: ● Copper  ● Gold  ● Iron  ● Other                            │
+│ Size = Reserve Quantity                                                     │
+│                                                                             │
+│ [Filter Quadrant] [Add to Watchlist] [Export Selection]                    │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+TAB 5: ANALYTICS & INSIGHTS
+================================================================================
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ DISTRICT COMPARATIVE ANALYSIS                                               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│ Select Districts to Compare: [Mkushi ✓] [Kabwe ✓] [Kasempa ✓] [+ Add]     │
+│                                                                             │
+│ ┌───────────────────────────────────────────────────────────────────────┐  │
+│ │                      COMPARISON CHART                                 │  │
+│ │                                                                       │  │
+│ │   Metric          Mkushi    Kabwe     Kasempa                        │  │
+│ │   ─────────────────────────────────────────────                      │  │
+│ │   Total Sites       116       102        20                          │  │
+│ │   Total Value     $1.2B     $0.8B     $0.3B                          │  │
+│ │   Avg Access       89/100   85/100    62/100                         │  │
+│ │   Active Sites      98%      92%       85%                           │  │
+│ │   Dominant         Copper   Mixed     Cu/Au                          │  │
+│ │                                                                       │  │
+│ │   [BAR CHART comparing districts across metrics]                     │  │
+│ │                                                                       │  │
+│ └───────────────────────────────────────────────────────────────────────┘  │
+│                                                                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ CLUSTER ANALYSIS                                                            │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│ 7 Major Clusters Identified (within 20km radius):                          │
+│                                                                             │
+│ ┌──────────────────────────────────────────────────────────────────────┐   │
+│ │ Cluster A: Mkushi Hub                                                │   │
+│ │   • Sites: 72  |  Commodities: Cu (90%), Co (10%)                   │   │
+│ │   • Total Value: $1.1B  |  Avg Access: 88/100                       │   │
+│ │   • Shared Infrastructure Potential: HIGH                            │   │
+│ │   • Recommended: Hub-and-spoke development from Mkushi town          │   │
+│ │   [View Details] [Generate Development Plan]                         │   │
+│ └──────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+│ ┌──────────────────────────────────────────────────────────────────────┐   │
+│ │ Cluster B: Kabwe Complex                                             │   │
+│ │   • Sites: 53  |  Commodities: Mixed (Cu 60%, Zn 25%, Pb 15%)       │   │
+│ │   • Total Value: $0.7B  |  Avg Access: 92/100                       │   │
+│ │   • Shared Infrastructure Potential: VERY HIGH                       │   │
+│ │   • Recommended: Leverage existing Kabwe infrastructure              │   │
+│ │   [View Details] [Generate Development Plan]                         │   │
+│ └──────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+│ ... [Additional clusters]                                                   │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+TAB 6: REPORTS & EXPORT
+================================================================================
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ GENERATE CUSTOM REPORT                                                      │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│ Report Type:                                                                │
+│   ◉ Investment Summary                                                      │
+│   ○ Technical Assessment                                                    │
+│   ○ Due Diligence Package                                                   │
+│   ○ Portfolio Overview                                                      │
+│   ○ District Profile                                                        │
+│   ○ Custom Report                                                           │
+│                                                                             │
+│ Include Sections:                                                           │
+│   ☑ Executive Summary           ☑ Site Locations Map                       │
+│   ☑ Valuation Analysis          ☑ Geological Assessment                    │
+│   ☑ Top Opportunities (N=10)    ☑ Infrastructure Analysis                  │
+│   ☑ Risk Assessment             ☐ Historical Context                       │
+│                                                                             │
+│ Filters:                                                                    │
+│   Commodity: [All ▼]   Province: [All ▼]   Min Value: [$10M]              │
+│                                                                             │
+│ Output Format:                                                              │
+│   ☑ PDF  ☑ Excel  ☐ PowerPoint  ☐ Word                                    │
+│                                                                             │
+│ [Generate Report] [Save Template] [Schedule Recurring]                     │
+│                                                                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ QUICK EXPORTS                                                               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│ [Export Current View to Excel]                                             │
+│ [Export Map as High-Res Image]                                             │
+│ [Export Filtered Sites to CSV]                                             │
+│ [Generate Investment Deck (PowerPoint)]                                    │
+│ [Create Executive Briefing (PDF)]                                          │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+MOBILE VIEW CONSIDERATIONS
+================================================================================
+
+RESPONSIVE LAYOUT:
+- Stack filters vertically on mobile
+- Single map view (tabbed between standard/geological)
+- Simplified opportunity matrix (list view instead of scatter)
+- Touch-optimized controls
+- Downloadable offline map data
+
+KEY FEATURES TO PRESERVE:
+- Core filtering functionality
+- Map interaction (zoom, pan, click for details)
+- Top 10 rankings
+- Quick access to valuations
+
+================================================================================
+COLOR SCHEME & BRANDING
+================================================================================
+
+PRIMARY COLORS:
+- Primary: #1E40AF (Professional Blue) - Headers, main actions
+- Secondary: #059669 (Success Green) - Positive indicators
+- Accent: #DC2626 (Alert Red) - High priority items
+- Warning: #F59E0B (Amber) - Medium priority
+
+BACKGROUND:
+- Light: #F9FAFB (Off-white)
+- Cards: #FFFFFF (White)
+- Subtle: #E5E7EB (Light gray borders)
+
+DATA VISUALIZATION:
+- Heat Map: Blue (low) → Yellow → Red (high)
+- Commodities: Distinct colors per type (Copper=Orange, Gold=Yellow, etc.)
+- Status: Green (Active), Gray (Unknown), Red (Inactive)
+
+================================================================================
+INTERACTION PATTERNS
+================================================================================
+
+MAP INTERACTIONS:
+- Hover: Show quick preview tooltip
+- Click: Open detailed property card
+- Double-click: Zoom to property
+- Right-click: Context menu (Add to watchlist, Export, Navigate)
+
+FILTERS:
+- Auto-apply (no submit button needed)
+- Visual feedback on active filters
+- Reset all button
+- Save filter presets
+
+DATA TABLES:
+- Sortable columns
+- Row selection for bulk actions
+- Inline expansion for details
+- Export selected rows
+
+SLIDERS:
+- Real-time map update as slider moves
+- Show count of visible sites
+- Snap to meaningful increments (10, 25, 50)
+
+================================================================================
+PERFORMANCE CONSIDERATIONS
+================================================================================
+
+FOR LARGE DATASETS:
+- Lazy load map markers (viewport-based)
+- Cluster markers when zoomed out
+- Cache computed metrics
+- Paginate large tables
+- Progressive data loading
+
+OPTIMIZATION:
+- Debounce slider updates (300ms delay)
+- Memoize expensive calculations
+- Use WebGL for complex visualizations
+- Server-side data aggregation where possible
+
+================================================================================
+ACCESSIBILITY
+================================================================================
+
+WCAG 2.1 AA COMPLIANCE:
+- Keyboard navigation support
+- Screen reader compatible
+- Sufficient color contrast (4.5:1 minimum)
+- Alt text for all visualizations
+- Form labels and ARIA attributes
+
+USABILITY:
+- Tooltips for complex features
+- Help text / info icons
+- Consistent interaction patterns
+- Error messages with recovery guidance
+
+================================================================================
+This wireframe guide provides a comprehensive vision for the enhanced platform.
+Implementation can be phased as outlined in the feasibility document.
+================================================================================
