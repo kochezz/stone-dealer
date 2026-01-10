@@ -37,7 +37,7 @@ CHINGOLA_COORDS = (-12.5333, 27.8500)
 CHINGOLA_NAME = "Chingola Base"
 
 # --- Password Configuration ---
-APP_PASSWORD = os.environ.get("APP_PASSWORD", "Claire&Goska")
+APP_PASSWORD = os.environ.get("APP_PASSWORD", "mulimakwenda")
 
 # --- Authentication Functions ---
 def check_password():
