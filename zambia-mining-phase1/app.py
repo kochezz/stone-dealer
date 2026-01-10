@@ -37,7 +37,18 @@ CHINGOLA_COORDS = (-12.5333, 27.8500)
 CHINGOLA_NAME = "Chingola Base"
 
 # --- Password Configuration ---
-APP_PASSWORD = os.environ.get("APP_PASSWORD", "mulimakwenda")
+# Password is loaded from Streamlit secrets or environment variable
+# DO NOT hardcode password here - it will be visible in GitHub!
+try:
+    # Try Streamlit secrets first (for Streamlit Cloud)
+    APP_PASSWORD = st.secrets["APP_PASSWORD"]
+except (KeyError, FileNotFoundError):
+    # Fall back to environment variable (for local/Docker)
+    APP_PASSWORD = os.environ.get("APP_PASSWORD")
+    if not APP_PASSWORD:
+        st.error("⚠️ Password not configured! Please set APP_PASSWORD in secrets or environment.")
+        st.info("See README.md for configuration instructions.")
+        st.stop()
 
 # --- Authentication Functions ---
 def check_password():
@@ -55,7 +66,7 @@ def check_password():
         st.markdown("""
             <div style='text-align: center; padding: 50px;'>
                 <h1>⛏️ Zambia Mining Intelligence Platform</h1>
-                <p style='color: #666; font-size: 1.2em;'>Business Enterprise Data Analytics</p>
+                <p style='color: #666; font-size: 1.2em;'>BEDA</p>
             </div>
         """, unsafe_allow_html=True)
         
@@ -76,7 +87,7 @@ def check_password():
         st.markdown("""
             <div style='text-align: center; padding: 50px;'>
                 <h1>⛏️ Zambia Mining Intelligence Platform</h1>
-                <p style='color: #666; font-size: 1.2em;'>Vilagio Trading Limited</p>
+                <p style='color: #666; font-size: 1.2em;'>Business Enterprise Data Analytics</p>
             </div>
         """, unsafe_allow_html=True)
         
@@ -857,7 +868,7 @@ elif view_mode == "🚗 Accessibility":
 st.markdown("---")
 st.markdown("""
     <div style='text-align: center; color: #666; padding: 20px;'>
-        <p>Zambia Mining Intelligence Platform | BEDA</p>
+        <p>Zambia Mining Intelligence Platform | Vilagio Trading Limited</p>
         <p>Phase 1: Density Analysis • Geological Mapping • Accessibility Assessment</p>
     </div>
 """, unsafe_allow_html=True)
