@@ -55,7 +55,7 @@ def check_password():
         st.markdown("""
             <div style='text-align: center; padding: 50px;'>
                 <h1>⛏️ Zambia Mining Intelligence Platform</h1>
-                <p style='color: #666; font-size: 1.2em;'>Vilagio Trading Limited</p>
+                <p style='color: #666; font-size: 1.2em;'>Business Enterprise Data Analytics</p>
             </div>
         """, unsafe_allow_html=True)
         
@@ -76,7 +76,7 @@ def check_password():
         st.markdown("""
             <div style='text-align: center; padding: 50px;'>
                 <h1>⛏️ Zambia Mining Intelligence Platform</h1>
-                <p style='color: #666; font-size: 1.2em;'>Business Enterprise Data Analytics(BEDA)</p>
+                <p style='color: #666; font-size: 1.2em;'>Vilagio Trading Limited</p>
             </div>
         """, unsafe_allow_html=True)
         
@@ -479,7 +479,20 @@ elif view_mode == "🗺️ Site Explorer":
     
     fig_map.update_layout(
         mapbox_style="open-street-map",
-        margin={"r": 0, "t": 0, "l": 0, "b": 0}
+        margin={"r": 0, "t": 0, "l": 0, "b": 0},
+        legend=dict(
+            orientation="v",
+            yanchor="top",
+            y=0.98,
+            xanchor="left",
+            x=0.02,
+            bgcolor="rgba(255, 255, 255, 0.95)",
+            bordercolor="rgba(100, 100, 100, 0.8)",
+            borderwidth=2,
+            font=dict(size=13, color='black'),
+            title=dict(text=f"<b>{map_color}</b>", font=dict(size=14, color='black')),
+            itemsizing='constant'
+        )
     )
     
     # Add Chingola base marker
@@ -556,7 +569,20 @@ elif view_mode == "💎 Geological Analysis":
         
         fig_geo1.update_layout(
             mapbox_style="open-street-map",
-            margin={"r": 0, "t": 0, "l": 0, "b": 0}
+            margin={"r": 0, "t": 0, "l": 0, "b": 0},
+            legend=dict(
+                orientation="v",
+                yanchor="top",
+                y=0.98,
+                xanchor="left",
+                x=0.02,
+                bgcolor="rgba(255, 255, 255, 0.95)",
+                bordercolor="rgba(100, 100, 100, 0.8)",
+                borderwidth=2,
+                font=dict(size=13, color='black'),
+                title=dict(text="<b>Commodity</b>", font=dict(size=14, color='black')),
+                itemsizing='constant'
+            )
         )
         
         st.plotly_chart(fig_geo1, use_container_width=True)
@@ -636,11 +662,15 @@ elif view_mode == "💎 Geological Analysis":
             legend=dict(
                 orientation="v",
                 yanchor="top",
-                y=0.99,
+                y=0.98,
                 xanchor="left",
-                x=0.01,
-                bgcolor="rgba(255, 255, 255, 0.8)",
-                font=dict(size=10)
+                x=0.02,
+                bgcolor="rgba(255, 255, 255, 0.95)",  # More opaque background
+                bordercolor="rgba(100, 100, 100, 0.8)",
+                borderwidth=2,
+                font=dict(size=13, color='black'),  # Larger, black text
+                title=dict(text="<b>Geology & Trends</b>", font=dict(size=14, color='black')),
+                itemsizing='constant'
             )
         )
         
@@ -755,7 +785,20 @@ elif view_mode == "🚗 Accessibility":
     
     fig_access.update_layout(
         mapbox_style="open-street-map",
-        margin={"r": 0, "t": 0, "l": 0, "b": 0}
+        margin={"r": 0, "t": 0, "l": 0, "b": 0},
+        legend=dict(
+            orientation="v",
+            yanchor="top",
+            y=0.98,
+            xanchor="left",
+            x=0.02,
+            bgcolor="rgba(255, 255, 255, 0.95)",
+            bordercolor="rgba(100, 100, 100, 0.8)",
+            borderwidth=2,
+            font=dict(size=13, color='black'),
+            title=dict(text="<b>Accessibility</b>", font=dict(size=14, color='black')),
+            itemsizing='constant'
+        )
     )
     
     # Add Chingola
